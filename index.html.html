@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Shuuvi Bakery & Cafe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════
+   CAKE ASSEMBLY LOADING SCREEN
+══════════════════════════════════════ */
+#loadingOverlay{
+  position:fixed;inset:0;z-index:999;
+  background:#fff8f2;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  transition:opacity 0.7s ease;
+}
+#loadingOverlay.hide{opacity:0;pointer-events:none;}
+
+.cake-scene{
+  position:relative;
+  width:220px;height:260px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* SVG cake */
+#cakeSvg{
+  width:200px;height:240px;
+  overflow:visible;
+}
+
+/* Each SVG part starts off-screen then flies in */
+.cake-part{
+  opacity:0;
+  transition:opacity 0.3s;
+}
+
+/* Sway animation after assembly */
+@keyframes cakeSway{
+  0%   {transform:rotate(0deg);}
+  15%  {transform:rotate(-5deg);}
+  35%  {transform:rotate(5deg);}
+  55%  {transform:rotate(-4deg);}
+  75%  {transform:rotate(3deg);}
+  90%  {transform:rotate(-1deg);}
+  100% {transform:rotate(0deg);}
+}
+@keyframes flyFromTopLeft{
+  0%  {transform:translate(-80px,-100px) rotate(-45deg);opacity:0;}
+  60% {transform:translate(6px,6px) rotate(3deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromTopRight{
+  0%  {transform:translate(80px,-90px) rotate(40deg);opacity:0;}
+  60% {transform:translate(-5px,5px) rotate(-3deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromLeft{
+  0%  {transform:translate(-100px,20px) rotate(-30deg);opacity:0;}
+  65% {transform:translate(8px,0) rotate(2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromRight{
+  0%  {transform:translate(100px,10px) rotate(30deg);opacity:0;}
+  65% {transform:translate(-8px,0) rotate(-2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromBottom{
+  0%  {transform:translate(0,80px) rotate(15deg);opacity:0;}
+  65% {transform:translate(0,-6px) rotate(-1deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromTop{
+  0%  {transform:translate(0,-100px) rotate(-20deg);opacity:0;}
+  65% {transform:translate(0,6px) rotate(2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromBottomLeft{
+  0%  {transform:translate(-70px,80px) rotate(25deg);opacity:0;}
+  65% {transform:translate(5px,-5px) rotate(-2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromBottomRight{
+  0%  {transform:translate(70px,70px) rotate(-25deg);opacity:0;}
+  65% {transform:translate(-5px,-5px) rotate(2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes fadeInUp{
+  0%  {opacity:0;transform:translateY(20px);}
+  60% {opacity:0.7;transform:translateY(-3px);}
+  100%{opacity:1;transform:translateY(0);}
+}
+@keyframes candleFlicker{
+  0%  {transform:scaleX(1)   translateY(0);}
+  25% {transform:scaleX(0.75) translateY(-2px) rotate(-3deg);}
+  50% {transform:scaleX(1.1)  translateY(1px)  rotate(2deg);}
+  75% {transform:scaleX(0.85) translateY(-1px) rotate(-2deg);}
+  100%{transform:scaleX(1)   translateY(0);}
+}
+
+.loading-brand-wrap{
+  text-align:center;
+  margin-top:10px;
+  opacity:0;
+}
+.loading-brand-wrap.show{
+  animation:fadeInUp 1.2s cubic-bezier(0.25,0.8,0.25,1) forwards;
+}
+.loading-brand-name{
+  font-family:'Playfair Display',serif;
+  font-size:26px;font-weight:900;
+  color:var(--rose);
+  letter-spacing:1px;
+}
+.loading-brand-sub{
+  font-size:10px;color:#be185d;
+  letter-spacing:3px;text-transform:uppercase;
+  margin-top:2px;
+}
+.loading-tagline{
+  font-size:12px;color:#9d174d;
+  margin-top:4px;opacity:0.8;
+}
+
+/* ── NAVBAR ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(255,248,242,0.95);backdrop-filter:blur(12px);border-bottom:1px solid #fce7f3;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;}
+.nav-location{font-size:11px;color:#9d174d;}
+.nav-logo{display:flex;flex-direction:column;align-items:center;font-family:'Playfair Display',serif;}
+.nav-logo .name{font-size:20px;font-weight:900;color:var(--rose);letter-spacing:1px;}
+.nav-logo .sub{font-size:8px;color:#be185d;letter-spacing:3px;text-transform:uppercase;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.cart-btn{position:relative;background:none;border:none;cursor:pointer;font-size:22px;}
+.cart-badge{position:absolute;top:-5px;right:-7px;background:var(--rose);color:white;font-size:10px;font-weight:700;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.cart-badge.show{opacity:1;transform:scale(1);}
+
+/* ── INSTAGRAM BUTTON ── */
+.insta-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:white;border:none;border-radius:10px;cursor:pointer;text-decoration:none;transition:all 0.2s;box-shadow:0 3px 10px rgba(220,39,67,0.3);flex-shrink:0;}
+.insta-btn:hover{transform:scale(1.1);}
+.insta-btn svg{width:18px;height:18px;fill:white;}
+
+/* ── MAIN ── */
+main{position:relative;z-index:1;padding:0 0 40px;}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:30px 24px 16px;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(22px,5vw,36px);font-weight:900;color:var(--dark);line-height:1.2;margin-bottom:8px;}
+.hero h1 span{color:var(--rose);}
+.hero p{font-size:13px;color:#6b2d4e;max-width:340px;margin:0 auto;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:8px;padding:10px 16px 14px;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:6px 14px;border-radius:999px;border:1.5px solid #fbcfe8;background:white;font-size:12px;font-weight:500;color:#9d174d;cursor:pointer;transition:all 0.2s;}
+.tab.active{background:var(--rose);color:white;border-color:var(--rose);box-shadow:0 4px 12px rgba(225,29,114,0.3);}
+
+/* ── PRODUCTS ── */
+.products-wrap{padding:0 14px;}
+.products-label{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.products-label-line{flex:1;height:2px;background:linear-gradient(90deg,var(--rose),#fbcfe8,transparent);}
+.products-label-text{font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:var(--dark);white-space:nowrap;}
+.products-label-line.right{background:linear-gradient(90deg,transparent,#fbcfe8,var(--rose));}
+.products{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px;}
+.products::-webkit-scrollbar{display:none;}
+.card{flex-shrink:0;width:160px;background:white;border-radius:22px;border:1.5px solid #fce7f3;padding:14px 12px 12px;display:flex;flex-direction:column;align-items:center;box-shadow:0 4px 16px rgba(244,114,182,0.12);transition:transform 0.2s,box-shadow 0.2s;opacity:0;cursor:pointer;}
+.card:hover{transform:translateY(-5px);box-shadow:0 10px 28px rgba(244,114,182,0.22);}
+.card.pop{animation:popIn 0.55s cubic-bezier(0.34,1.4,0.64,1) forwards;}
+.card-img-wrap{width:100px;height:100px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:linear-gradient(135deg,#fce7f3,#fff0f8);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.card-img-wrap img{width:100%;height:100%;object-fit:cover;}
+.card-img-emoji{font-size:52px;line-height:1;}
+.card-name{font-size:12px;font-weight:700;color:var(--dark);text-align:center;margin-bottom:3px;line-height:1.3;}
+.card-desc{font-size:10px;color:#9d174d;text-align:center;margin-bottom:5px;line-height:1.4;opacity:0.8;max-height:30px;overflow:hidden;}
+.card-price{font-size:13px;color:var(--rose);font-weight:800;margin-bottom:10px;}
+.add-btn{width:32px;height:32px;border-radius:50%;background:var(--dark);color:white;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);}
+.add-btn:hover{background:var(--rose);transform:scale(1.2) rotate(90deg);}
+.add-btn.added{background:var(--rose);transform:scale(1.3) rotate(180deg);}
+
+/* ── TRAY ── */
+.plate-section{margin:20px 14px 0;display:flex;flex-direction:column;align-items:center;background:transparent;}
+.plate-wrap{position:relative;width:100%;max-width:400px;}
+.tray-bg{position:relative;width:100%;min-height:160px;border-radius:0;overflow:visible;background:transparent;box-shadow:none;}
+.tray-bg-fallback{background:linear-gradient(160deg,#d4956a 0%,#b87240 30%,#c8854f 55%,#a0612e 80%,#b87240 100%);border-radius:16px;min-height:160px;box-shadow:0 8px 32px rgba(120,60,20,0.3);overflow:hidden;}
+.tray-bg-fallback::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 22px,rgba(0,0,0,0.04) 22px,rgba(0,0,0,0.04) 23px);border-radius:16px;}
+.tray-img-el{width:100%;height:auto;display:block;border-radius:0;object-fit:contain;background:transparent;}
+.tray-items-overlay{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:0 40px 18px 40px;pointer-events:none;z-index:2;}
+.plate-item-img{width:110px;height:110px;border-radius:0;object-fit:contain;border:none;background:transparent;box-shadow:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.28));animation:dropOnto 0.55s cubic-bezier(0.34,1.3,0.64,1) both;flex-shrink:0;}
+.plate-item-emoji{font-size:80px;line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.4));animation:dropOnto 0.55s cubic-bezier(0.34,1.3,0.64,1) both;}
+.tray-bg.bounce{animation:plateBounce 0.45s ease both;transform-origin:center bottom;}
+.plate-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;color:rgba(255,255,255,0.85);text-align:center;pointer-events:none;font-weight:600;transition:opacity 0.3s;line-height:1.6;text-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.review-btn{margin-top:16px;background:var(--dark);color:white;border:none;border-radius:14px;padding:12px 36px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.15);transition:all 0.2s;opacity:0;transform:translateY(10px);pointer-events:none;}
+.review-btn.visible{opacity:1;transform:translateY(0);pointer-events:all;animation:fadeUp 0.4s ease both;}
+.review-btn:hover{background:var(--rose);transform:scale(1.04);}
+
+/* ── FOLLOW INSTAGRAM (gallery section) ── */
+.follow-section{text-align:center;padding:32px 16px 16px;position:relative;z-index:2;}
+.follow-section h3{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--dark);margin-bottom:6px;}
+.follow-section p{font-size:12px;color:#9d174d;margin-bottom:14px;}
+.follow-insta-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:white;border:none;border-radius:999px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;transition:all 0.2s;box-shadow:0 4px 12px rgba(220,39,67,0.3);}
+.follow-insta-btn:hover{transform:scale(1.05);}
+.follow-insta-btn svg{width:16px;height:16px;fill:white;}
+
+
+:root{--rose:#e11d72;--cream:#fff8f2;--dark:#1a0a0a;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,#f9a8d4 1px,transparent 1px);background-size:32px 32px;opacity:0.15;pointer-events:none;z-index:0;}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{0%{opacity:0;transform:scale(0.5) translateY(30px)}70%{transform:scale(1.08) translateY(-4px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes bounceIn{0%{opacity:0;transform:scale(0.3)}60%{transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+@keyframes dropOnto{0%{opacity:0;transform:translateY(-80px) scale(0.3) rotate(-20deg)}60%{transform:translateY(6px) scale(1.1) rotate(4deg)}80%{transform:translateY(-3px) scale(0.96) rotate(-1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@keyframes plateBounce{0%{transform:scaleY(1)}30%{transform:scaleY(0.93) scaleX(1.04)}60%{transform:scaleY(1.03) scaleX(0.98)}100%{transform:scaleY(1)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+@keyframes floatUp{0%{opacity:0;transform:translateY(40px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes heartPop{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes ribbonPulse{0%,100%{opacity:0.6}50%{opacity:1}}
+.anim{opacity:0;}
+
+/* ══════════════════════════════════════
+   CAKE ASSEMBLY LOADING SCREEN
+══════════════════════════════════════ */
+#loadingOverlay{
+  position:fixed;inset:0;z-index:999;
+  background:#fff8f2;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  transition:opacity 0.7s ease;
+}
+#loadingOverlay.hide{opacity:0;pointer-events:none;}
+
+.cake-scene{
+  position:relative;
+  width:220px;height:260px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* SVG cake */
+#cakeSvg{
+  width:200px;height:240px;
+  overflow:visible;
+}
+
+/* Each SVG part starts off-screen then flies in */
+.cake-part{
+  opacity:0;
+  transition:opacity 0.3s;
+}
+
+/* Sway animation after assembly */
+@keyframes cakeSway{
+  0%   {transform:rotate(0deg);}
+  15%  {transform:rotate(-5deg);}
+  35%  {transform:rotate(5deg);}
+  55%  {transform:rotate(-4deg);}
+  75%  {transform:rotate(3deg);}
+  90%  {transform:rotate(-1deg);}
+  100% {transform:rotate(0deg);}
+}
+@keyframes flyFromTopLeft{
+  0%  {transform:translate(-80px,-100px) rotate(-45deg);opacity:0;}
+  60% {transform:translate(6px,6px) rotate(3deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromTopRight{
+  0%  {transform:translate(80px,-90px) rotate(40deg);opacity:0;}
+  60% {transform:translate(-5px,5px) rotate(-3deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromLeft{
+  0%  {transform:translate(-100px,20px) rotate(-30deg);opacity:0;}
+  65% {transform:translate(8px,0) rotate(2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromRight{
+  0%  {transform:translate(100px,10px) rotate(30deg);opacity:0;}
+  65% {transform:translate(-8px,0) rotate(-2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromBottom{
+  0%  {transform:translate(0,80px) rotate(15deg);opacity:0;}
+  65% {transform:translate(0,-6px) rotate(-1deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromTop{
+  0%  {transform:translate(0,-100px) rotate(-20deg);opacity:0;}
+  65% {transform:translate(0,6px) rotate(2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromBottomLeft{
+  0%  {transform:translate(-70px,80px) rotate(25deg);opacity:0;}
+  65% {transform:translate(5px,-5px) rotate(-2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes flyFromBottomRight{
+  0%  {transform:translate(70px,70px) rotate(-25deg);opacity:0;}
+  65% {transform:translate(-5px,-5px) rotate(2deg);opacity:0.9;}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1;}
+}
+@keyframes fadeInUp{
+  0%  {opacity:0;transform:translateY(20px);}
+  60% {opacity:0.7;transform:translateY(-3px);}
+  100%{opacity:1;transform:translateY(0);}
+}
+@keyframes candleFlicker{
+  0%  {transform:scaleX(1)   translateY(0);}
+  25% {transform:scaleX(0.75) translateY(-2px) rotate(-3deg);}
+  50% {transform:scaleX(1.1)  translateY(1px)  rotate(2deg);}
+  75% {transform:scaleX(0.85) translateY(-1px) rotate(-2deg);}
+  100%{transform:scaleX(1)   translateY(0);}
+}
+
+.loading-brand-wrap{
+  text-align:center;
+  margin-top:10px;
+  opacity:0;
+}
+.loading-brand-wrap.show{
+  animation:fadeInUp 1.2s cubic-bezier(0.25,0.8,0.25,1) forwards;
+}
+.loading-brand-name{
+  font-family:'Playfair Display',serif;
+  font-size:26px;font-weight:900;
+  color:var(--rose);
+  letter-spacing:1px;
+}
+.loading-brand-sub{
+  font-size:10px;color:#be185d;
+  letter-spacing:3px;text-transform:uppercase;
+  margin-top:2px;
+}
+.loading-tagline{
+  font-size:12px;color:#9d174d;
+  margin-top:4px;opacity:0.8;
+}
+
+/* ── WEIGHT SELECTOR on card ── */
+.weight-selector{
+  display:flex;gap:4px;flex-wrap:wrap;justify-content:center;
+  margin-bottom:8px;
+}
+.weight-btn{
+  padding:3px 8px;border-radius:999px;
+  border:1.5px solid #fbcfe8;background:white;
+  font-size:10px;font-weight:600;color:#9d174d;
+  cursor:pointer;transition:all 0.18s;white-space:nowrap;
+}
+.weight-btn.active{
+  background:var(--rose);color:white;border-color:var(--rose);
+  box-shadow:0 2px 8px rgba(225,29,114,0.3);
+  transform:scale(1.08);
+}
+.card-price-dynamic{font-size:13px;color:var(--rose);font-weight:800;margin-bottom:10px;transition:all 0.2s;}
+
+/* ── ADMIN PASSWORD MODAL ── */
+.admin-pass-overlay{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;
+}
+.admin-pass-overlay.open{display:flex;animation:bounceIn 0.35s ease both;}
+.admin-pass-box{
+  background:white;border-radius:24px;padding:28px 24px;
+  width:86%;max-width:320px;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.25);
+}
+.admin-pass-box .lock-icon{font-size:48px;margin-bottom:12px;}
+.admin-pass-box h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--dark);margin-bottom:6px;}
+.admin-pass-box p{font-size:12px;color:#9d174d;margin-bottom:16px;}
+.admin-pass-input{
+  width:100%;padding:12px 14px;border-radius:12px;
+  border:2px solid #fbcfe8;font-size:16px;
+  font-family:'DM Sans',sans-serif;color:var(--dark);
+  background:white;outline:none;text-align:center;
+  letter-spacing:4px;transition:border-color 0.2s;
+}
+.admin-pass-input:focus{border-color:var(--rose);}
+.admin-pass-input.shake{animation:shake 0.4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.admin-pass-btn{
+  width:100%;margin-top:12px;padding:12px;
+  background:var(--dark);color:white;border:none;border-radius:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.admin-pass-btn:hover{background:var(--rose);}
+.admin-pass-cancel{
+  margin-top:8px;background:none;border:none;
+  color:#9d174d;font-size:12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+}
+.pass-error{color:#ef4444;font-size:11px;margin-top:8px;display:none;}
+
+
+/* ── WEIGHT PRICING in Admin ── */
+.weight-pricing-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.weight-price-row{display:flex;align-items:center;gap:8px;background:white;border:1.5px solid #fce7f3;border-radius:10px;padding:8px 10px;}
+.weight-price-label{font-size:11px;font-weight:700;color:var(--dark);min-width:40px;}
+.weight-price-input{flex:1;border:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);background:transparent;}
+.weight-price-unit{font-size:11px;color:#9d174d;font-weight:600;}
+.weight-add-row{display:flex;gap:6px;margin-top:4px;}
+.weight-add-input{flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid #fbcfe8;font-size:12px;font-family:'DM Sans',sans-serif;}
+.weight-add-btn{padding:6px 12px;background:var(--rose);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+
+
+/* ── WHATSAPP ORDER BUTTON ── */
+.whatsapp-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;margin-top:12px;
+  background:#25D366;color:white;
+  border:none;border-radius:14px;padding:14px;
+  font-size:15px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  box-shadow:0 6px 20px rgba(37,211,102,0.35);
+  transition:all 0.2s;
+}
+.whatsapp-btn:hover{transform:scale(1.02);background:#1ebe5d;}
+.whatsapp-btn svg{width:22px;height:22px;fill:white;flex-shrink:0;}
+
+/* ── CUSTOM CAKE PAGE ── */
+.custom-page{display:none;position:fixed;inset:0;z-index:200;background:var(--cream);overflow-y:auto;}
+.custom-page.open{display:block;animation:slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1);}
+.custom-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #fce7f3;position:sticky;top:0;background:var(--cream);backdrop-filter:blur(8px);z-index:10;}
+.custom-header h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--dark);}
+.custom-body{padding:20px 16px 40px;}
+.custom-hero{text-align:center;margin-bottom:24px;}
+.custom-hero .icon{font-size:56px;margin-bottom:8px;}
+.custom-hero h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--dark);margin-bottom:6px;}
+.custom-hero p{font-size:13px;color:#9d174d;max-width:300px;margin:0 auto;}
+.custom-form{display:flex;flex-direction:column;gap:14px;}
+.custom-label{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+.custom-input{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #fbcfe8;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);background:white;outline:none;transition:border-color 0.2s;}
+.custom-input:focus{border-color:var(--rose);}
+.custom-textarea{resize:none;height:110px;line-height:1.6;}
+.custom-img-upload{border:2px dashed #fbcfe8;border-radius:16px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:white;}
+.custom-img-upload:hover{border-color:var(--rose);background:#fff0f8;}
+.custom-img-upload .uicon{font-size:32px;margin-bottom:6px;}
+.custom-img-upload p{font-size:12px;color:#9d174d;font-weight:500;}
+.custom-preview-wrap{position:relative;margin-top:10px;}
+.custom-preview-img{width:100%;border-radius:14px;max-height:220px;object-fit:cover;border:2px solid #fce7f3;display:none;}
+.custom-remove-img{position:absolute;top:8px;right:8px;background:rgba(239,68,68,0.9);color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.custom-send-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:15px;
+  background:#25D366;color:white;
+  border:none;border-radius:14px;
+  font-size:15px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  box-shadow:0 6px 20px rgba(37,211,102,0.35);
+  transition:all 0.2s;margin-top:6px;
+}
+.custom-send-btn:hover{transform:scale(1.02);}
+.custom-send-btn svg{width:20px;height:20px;fill:white;}
+
+/* Custom cake floating button on main page */
+.custom-cake-fab{
+  position:fixed;bottom:24px;right:16px;z-index:90;
+  background:linear-gradient(135deg,var(--rose),#be185d);
+  color:white;border:none;border-radius:999px;
+  padding:12px 18px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  box-shadow:0 6px 20px rgba(225,29,114,0.4);
+  display:flex;align-items:center;gap:8px;
+  transition:all 0.2s;
+  animation:bounceIn 0.6s 2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.custom-cake-fab:hover{transform:scale(1.06);}
+
+/* ── SALES GRAPH (admin) ── */
+.sales-section{margin-top:4px;}
+.sales-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.sales-card{background:linear-gradient(135deg,#fdf2f8,#fce7f3);border:1.5px solid #fbcfe8;border-radius:14px;padding:12px;text-align:center;}
+.sales-card .sc-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--rose);}
+.sales-card .sc-label{font-size:10px;color:#9d174d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+.sales-chart-wrap{background:white;border-radius:16px;border:1.5px solid #fce7f3;padding:14px;overflow:hidden;}
+.sales-chart-title{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.sales-chart-title span{font-size:10px;color:#9d174d;font-weight:500;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;}
+.bar-inner{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--rose),#fbcfe8);min-height:4px;transition:height 0.6s cubic-bezier(0.34,1.2,0.64,1);position:relative;}
+.bar-inner:hover::after{content:attr(data-val);position:absolute;top:-24px;left:50%;transform:translateX(-50%);background:var(--dark);color:white;font-size:10px;padding:2px 6px;border-radius:4px;white-space:nowrap;}
+.bar-label{font-size:9px;color:#9d174d;font-weight:600;text-align:center;}
+.top-products{margin-top:12px;}
+.top-prod-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #fce7f3;}
+.top-prod-row:last-child{border-bottom:none;}
+.top-prod-name{font-size:12px;font-weight:600;color:var(--dark);display:flex;align-items:center;gap:6px;}
+.top-prod-amt{font-size:12px;font-weight:700;color:var(--rose);}
+.top-prod-bar{height:4px;background:linear-gradient(90deg,var(--rose),#fbcfe8);border-radius:2px;margin-top:3px;transition:width 0.6s ease;}
+.clear-sales-btn{width:100%;padding:8px;background:white;color:#ef4444;border:1.5px solid #fecaca;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:10px;transition:all 0.2s;}
+.clear-sales-btn:hover{background:#fee2e2;}
+
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown{from{opacity:0;transform:translateY(-24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{0%{opacity:0;transform:scale(0.5) translateY(30px)}70%{transform:scale(1.08) translateY(-4px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes bounceIn{0%{opacity:0;transform:scale(0.3)}60%{transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+@keyframes dropOnto{0%{opacity:0;transform:translateY(-80px) scale(0.3) rotate(-20deg)}60%{transform:translateY(6px) scale(1.1) rotate(4deg)}80%{transform:translateY(-3px) scale(0.96) rotate(-1deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@keyframes plateBounce{0%{transform:scaleY(1)}30%{transform:scaleY(0.93) scaleX(1.04)}60%{transform:scaleY(1.03) scaleX(0.98)}100%{transform:scaleY(1)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+@keyframes floatUp{0%{opacity:0;transform:translateY(40px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes heartPop{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes ribbonPulse{0%,100%{opacity:0.6}50%{opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.anim{opacity:0;}
+
+/* ── ORDER PAGE ── */
+.order-page{display:none;position:fixed;inset:0;z-index:200;background:var(--cream);overflow-y:auto;}
+.order-page.open{display:block;animation:slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1);}
+.order-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #fce7f3;position:sticky;top:0;background:var(--cream);backdrop-filter:blur(8px);z-index:10;}
+.back-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--rose);}
+.order-header h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--dark);}
+.order-plate{display:flex;justify-content:center;padding:20px 0 0;}
+.order-plate-mini{width:100px;height:60px;border-radius:14px;background:linear-gradient(160deg,#d4956a,#b87240);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px;padding:8px;overflow:hidden;box-shadow:0 4px 12px rgba(120,60,20,0.3);}
+.order-section-title{font-size:11px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px;padding-bottom:5px;border-bottom:2px solid #fce7f3;display:flex;align-items:center;gap:6px;}
+.order-card{margin:16px;background:white;border-radius:24px;border:1.5px solid #fce7f3;padding:20px;box-shadow:0 4px 20px rgba(244,114,182,0.1);}
+.order-card h3{font-family:'Playfair Display',serif;font-size:16px;color:var(--dark);margin-bottom:16px;}
+.order-input{width:100%;padding:11px 13px;border-radius:11px;border:1.5px solid #fbcfe8;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);background:white;outline:none;transition:border-color 0.2s;margin-bottom:10px;}
+.order-input:focus{border-color:var(--rose);}
+.order-input::placeholder{color:#c4a0b5;}
+.order-textarea{resize:none;height:80px;line-height:1.5;}
+.order-input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.order-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #fce7f3;}
+.order-item:last-of-type{border-bottom:none;}
+.order-item-left{display:flex;align-items:center;gap:8px;}
+.order-item-thumb{width:36px;height:36px;border-radius:8px;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
+.order-item-thumb img{width:100%;height:100%;object-fit:cover;}
+.order-item-name{font-size:13px;font-weight:500;color:var(--dark);}
+.order-item-price{font-size:11px;color:#9d174d;}
+.qty-ctrl{display:flex;align-items:center;gap:8px;}
+.qty-btn{width:24px;height:24px;border-radius:50%;border:1.5px solid #fbcfe8;background:white;color:var(--rose);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.qty-btn:hover{background:var(--rose);color:white;}
+.qty-num{font-size:13px;font-weight:600;min-width:16px;text-align:center;color:var(--dark);}
+.divider{border:none;border-top:1px dashed #fbcfe8;margin:12px 0;}
+.total-row{display:flex;justify-content:space-between;font-size:13px;color:#6b2d4e;margin:6px 0;}
+.total-row.grand{font-size:15px;font-weight:700;color:var(--dark);margin-top:8px;}
+.checkout-btn{display:block;width:100%;margin-top:14px;background:var(--rose);color:white;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 6px 20px rgba(225,29,114,0.3);transition:all 0.2s;}
+.checkout-btn:hover{transform:scale(1.02);}
+.whatsapp-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:12px;background:#25D366;color:white;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 6px 20px rgba(37,211,102,0.35);transition:all 0.2s;}
+.whatsapp-btn:hover{transform:scale(1.02);background:#1ebe5d;}
+.thankyou{display:none;text-align:center;padding:60px 24px;}
+.thankyou.show{display:block;animation:bounceIn 0.6s ease both;}
+.thankyou .icon{font-size:72px;margin-bottom:20px;}
+.thankyou h2{font-family:'Playfair Display',serif;font-size:28px;color:var(--dark);margin-bottom:10px;}
+.thankyou p{color:#9d174d;font-size:14px;}
+
+/* ── ADMIN PANEL ── */
+.admin-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);}
+.admin-overlay.open{display:flex;}
+.admin-panel{margin-left:auto;width:100%;max-width:420px;height:100%;background:white;overflow-y:auto;animation:slideInRight 0.35s cubic-bezier(0.34,1.2,0.64,1);display:flex;flex-direction:column;}
+.admin-header{padding:16px 18px;background:var(--dark);color:white;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.admin-header h2{font-family:'Playfair Display',serif;font-size:18px;}
+.admin-close{background:none;border:none;color:white;font-size:22px;cursor:pointer;}
+.admin-body{padding:16px;flex:1;}
+.admin-section-title{font-size:13px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:1px;margin:16px 0 10px;padding-bottom:6px;border-bottom:2px solid #fce7f3;}
+.plate-upload-box{border:2px dashed #fbcfe8;border-radius:16px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:12px;}
+.plate-upload-box:hover{border-color:var(--rose);background:#fff0f8;}
+.plate-upload-box p{font-size:12px;color:#9d174d;margin-top:6px;}
+.plate-preview{width:80px;height:60px;border-radius:10px;object-fit:cover;margin:0 auto 8px;display:block;border:3px solid #fce7f3;}
+.admin-product{background:#fff8f2;border-radius:14px;padding:12px;margin-bottom:10px;border:1.5px solid #fce7f3;}
+.admin-product-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.admin-prod-img-wrap{position:relative;flex-shrink:0;}
+.admin-prod-img{width:60px;height:60px;border-radius:12px;border:2px solid #fce7f3;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;overflow:hidden;}
+.admin-prod-img img{width:100%;height:100%;object-fit:cover;}
+.upload-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.45);border-radius:12px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;cursor:pointer;font-size:18px;color:white;}
+.admin-prod-img-wrap:hover .upload-overlay{opacity:1;}
+.admin-prod-fields{flex:1;display:flex;flex-direction:column;gap:6px;}
+.admin-input{width:100%;padding:7px 10px;border-radius:9px;border:1.5px solid #fbcfe8;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--dark);background:white;outline:none;transition:border-color 0.2s;}
+.admin-input:focus{border-color:var(--rose);}
+.admin-input-row{display:flex;gap:6px;}
+.admin-desc{resize:none;height:48px;line-height:1.4;}
+.admin-cat-select{appearance:none;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23e11d72'/%3E%3C/svg%3E") no-repeat right 8px center;}
+.admin-save-btn{width:100%;padding:13px;background:var(--rose);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;transition:all 0.2s;position:sticky;bottom:12px;box-shadow:0 4px 16px rgba(225,29,114,0.3);}
+.admin-save-btn:hover{transform:scale(1.02);}
+.add-product-btn{width:100%;padding:10px;background:white;color:var(--rose);border:2px dashed #fbcfe8;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin:8px 0;transition:all 0.2s;}
+.add-product-btn:hover{background:#fff0f8;border-color:var(--rose);}
+.gallery-upload-area{border:2px dashed #fbcfe8;border-radius:16px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:12px;background:white;}
+.gallery-upload-area:hover{border-color:var(--rose);background:#fff0f8;}
+.gallery-upload-area .upload-icon{font-size:36px;margin-bottom:8px;}
+.gallery-upload-area p{font-size:12px;color:#9d174d;font-weight:500;}
+.gallery-upload-area small{font-size:10px;color:#be185d;opacity:0.7;}
+.gallery-admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.gallery-admin-img{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1.5px solid #fce7f3;}
+.gallery-admin-img img{width:100%;height:100%;object-fit:cover;}
+.gallery-admin-img .del-img{position:absolute;top:4px;right:4px;background:rgba(239,68,68,0.9);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.upload-progress{width:100%;height:4px;background:#fce7f3;border-radius:2px;margin-top:10px;overflow:hidden;display:none;}
+.upload-progress-bar{height:100%;background:var(--rose);border-radius:2px;transition:width 0.3s;width:0%;}
+.firebase-status{font-size:10px;padding:4px 8px;border-radius:6px;margin-bottom:8px;text-align:center;}
+.firebase-status.ok{background:#dcfce7;color:#166534;}
+.firebase-status.err{background:#fee2e2;color:#991b1b;}
+.firebase-status.loading{background:#fef9c3;color:#854d0e;}
+input[type=file]{display:none;}
+
+/* ── GALLERY SECTION ── */
+.gallery-section{position:relative;margin:48px 0 0;padding:56px 16px 64px;overflow:hidden;}
+.gallery-section::before{content:'';position:absolute;top:0;left:0;right:0;height:64px;background:var(--cream);clip-path:ellipse(55% 100% at 50% 0%);z-index:1;}
+.gallery-bg{position:absolute;inset:0;background:linear-gradient(160deg,#fdf2f8 0%,#fce7f3 40%,#fbcfe8 70%,#fdf2f8 100%);z-index:0;}
+.gallery-float-emoji{position:absolute;font-size:28px;pointer-events:none;z-index:1;animation:float 3s ease-in-out infinite;}
+.gallery-content{position:relative;z-index:2;}
+.gallery-heading{text-align:center;margin-bottom:24px;padding-top:16px;}
+.gallery-heading .eyebrow{font-size:11px;font-weight:700;color:var(--rose);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.gallery-heading .eyebrow span{display:inline-block;width:28px;height:2px;background:var(--rose);border-radius:2px;}
+.gallery-heading h2{font-family:'Playfair Display',serif;font-size:clamp(24px,5vw,36px);font-weight:900;color:var(--dark);line-height:1.2;margin-bottom:8px;}
+.gallery-heading h2 em{color:var(--rose);font-style:normal;}
+.gallery-heading p{font-size:13px;color:#9d174d;max-width:300px;margin:0 auto;}
+.hearts-row{display:flex;justify-content:center;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.heart-tag{background:white;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:600;color:#be185d;border:1.5px solid #fbcfe8;box-shadow:0 2px 8px rgba(244,114,182,0.15);animation:heartPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;}
+.gallery-ribbon-row{display:flex;align-items:center;margin-bottom:10px;gap:8px;}
+.ribbon-line{flex:1;height:3px;background:repeating-linear-gradient(90deg,#f9a8d4 0px,#f9a8d4 8px,transparent 8px,transparent 14px);border-radius:2px;animation:ribbonPulse 2s ease-in-out infinite;}
+.ribbon-knot{font-size:18px;animation:sway 2s ease-in-out infinite;flex-shrink:0;}
+.gallery-col-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(min-width:480px){.gallery-col-wrap{grid-template-columns:1fr 1fr 1fr;}}
+.gallery-item{position:relative;border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:0 4px 16px rgba(244,114,182,0.18);opacity:0;transition:transform 0.25s,box-shadow 0.25s;aspect-ratio:1/1;}
+.gallery-item.appear{animation:floatUp 0.55s cubic-bezier(0.34,1.2,0.64,1) forwards;}
+.gallery-item:hover{transform:scale(1.04) rotate(-1deg);box-shadow:0 10px 32px rgba(244,114,182,0.35);}
+.gallery-item img{width:100%;height:100%;object-fit:cover;display:block;}
+.gallery-item .corner-emoji{position:absolute;font-size:18px;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));animation:float 2.5s ease-in-out infinite;}
+.gallery-item .corner-emoji.tl{top:-4px;left:-2px;}
+.gallery-item .corner-emoji.tr{top:-4px;right:-2px;animation-delay:0.5s;}
+.gallery-item .corner-emoji.bl{bottom:-4px;left:-2px;animation-delay:1s;}
+.gallery-item .corner-emoji.br{bottom:-4px;right:-2px;animation-delay:1.5s;}
+.gallery-item-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(225,29,114,0.2),rgba(244,114,182,0.15));opacity:0;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;font-size:28px;}
+.gallery-item:hover .gallery-item-overlay{opacity:1;}
+.gallery-skeleton{aspect-ratio:1/1;border-radius:18px;background:linear-gradient(90deg,#fce7f3 25%,#fbcfe8 50%,#fce7f3 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;}
+.gallery-empty{text-align:center;padding:40px 16px;grid-column:1/-1;}
+.gallery-empty .icon{font-size:48px;margin-bottom:12px;}
+.gallery-empty p{color:#be185d;font-size:13px;font-weight:500;}
+.gallery-footer-strip{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:28px;flex-wrap:wrap;}
+.gallery-footer-strip span{font-size:22px;animation:float 2s ease-in-out infinite;}
+
+/* ── LIGHTBOX ── */
+.lightbox{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.lightbox.open{display:flex;animation:bounceIn 0.3s ease both;}
+.lightbox img{max-width:92vw;max-height:88vh;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.5);object-fit:contain;}
+.lightbox-close{position:absolute;top:20px;right:20px;background:white;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+
+/* ── CUSTOM CAKE PAGE ── */
+.custom-page{display:none;position:fixed;inset:0;z-index:200;background:var(--cream);overflow-y:auto;}
+.custom-page.open{display:block;animation:slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1);}
+.custom-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #fce7f3;position:sticky;top:0;background:var(--cream);backdrop-filter:blur(8px);z-index:10;}
+.custom-header h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--dark);}
+.custom-body{padding:20px 16px 40px;}
+.custom-hero{text-align:center;margin-bottom:24px;}
+.custom-hero .icon{font-size:56px;margin-bottom:8px;}
+.custom-hero h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--dark);margin-bottom:6px;}
+.custom-hero p{font-size:13px;color:#9d174d;max-width:300px;margin:0 auto;}
+.custom-form{display:flex;flex-direction:column;gap:14px;}
+.custom-label{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+.custom-input{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #fbcfe8;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);background:white;outline:none;transition:border-color 0.2s;}
+.custom-input:focus{border-color:var(--rose);}
+.custom-textarea{resize:none;height:110px;line-height:1.6;}
+.custom-img-upload{border:2px dashed #fbcfe8;border-radius:16px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:white;}
+.custom-img-upload:hover{border-color:var(--rose);background:#fff0f8;}
+.custom-img-upload .uicon{font-size:32px;margin-bottom:6px;}
+.custom-img-upload p{font-size:12px;color:#9d174d;font-weight:500;}
+.custom-preview-img{width:100%;border-radius:14px;max-height:220px;object-fit:cover;border:2px solid #fce7f3;display:none;}
+.custom-remove-img{position:absolute;top:8px;right:8px;background:rgba(239,68,68,0.9);color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.custom-send-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#25D366;color:white;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 6px 20px rgba(37,211,102,0.35);transition:all 0.2s;margin-top:6px;}
+.custom-send-btn svg{width:20px;height:20px;fill:white;}
+
+/* ── CUSTOM CAKE FAB ── */
+.custom-cake-fab{position:fixed;bottom:24px;right:16px;z-index:90;background:linear-gradient(135deg,var(--rose),#be185d);color:white;border:none;border-radius:999px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 6px 20px rgba(225,29,114,0.4);display:flex;align-items:center;gap:8px;transition:all 0.2s;animation:bounceIn 0.6s 2s cubic-bezier(0.34,1.56,0.64,1) both;}
+.custom-cake-fab:hover{transform:scale(1.06);}
+
+/* ── ADMIN PASSWORD MODAL ── */
+.admin-pass-overlay{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.admin-pass-overlay.open{display:flex;animation:bounceIn 0.35s ease both;}
+.admin-pass-box{background:white;border-radius:24px;padding:28px 24px;width:86%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+.admin-pass-box .lock-icon{font-size:48px;margin-bottom:12px;}
+.admin-pass-box h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--dark);margin-bottom:6px;}
+.admin-pass-box p{font-size:12px;color:#9d174d;margin-bottom:16px;}
+.admin-pass-input{width:100%;padding:12px 14px;border-radius:12px;border:2px solid #fbcfe8;font-size:16px;font-family:'DM Sans',sans-serif;color:var(--dark);background:white;outline:none;text-align:center;letter-spacing:4px;transition:border-color 0.2s;}
+.admin-pass-input:focus{border-color:var(--rose);}
+.admin-pass-input.shake{animation:shake 0.4s ease;}
+.admin-pass-btn{width:100%;margin-top:12px;padding:12px;background:var(--dark);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.admin-pass-btn:hover{background:var(--rose);}
+.admin-pass-cancel{margin-top:8px;background:none;border:none;color:#9d174d;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.pass-error{color:#ef4444;font-size:11px;margin-top:8px;display:none;}
+
+/* ── WEIGHT SELECTOR ── */
+.weight-selector{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;}
+.weight-btn{padding:3px 8px;border-radius:999px;border:1.5px solid #fbcfe8;background:white;font-size:10px;font-weight:600;color:#9d174d;cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.weight-btn.active{background:var(--rose);color:white;border-color:var(--rose);box-shadow:0 2px 8px rgba(225,29,114,0.3);transform:scale(1.08);}
+.card-price-dynamic{font-size:13px;color:var(--rose);font-weight:800;margin-bottom:10px;transition:all 0.2s;}
+
+/* ── WEIGHT PRICING ADMIN ── */
+.weight-pricing-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.weight-price-row{display:flex;align-items:center;gap:8px;background:white;border:1.5px solid #fce7f3;border-radius:10px;padding:8px 10px;}
+.weight-price-label{font-size:11px;font-weight:700;color:var(--dark);min-width:40px;}
+.weight-price-input{flex:1;border:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--dark);background:transparent;}
+.weight-price-unit{font-size:11px;color:#9d174d;font-weight:600;}
+.weight-add-row{display:flex;gap:6px;margin-top:4px;}
+.weight-add-input{flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid #fbcfe8;font-size:12px;font-family:'DM Sans',sans-serif;}
+.weight-add-btn{padding:6px 12px;background:var(--rose);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+
+/* ── SALES GRAPH ── */
+.sales-section{margin-top:4px;}
+.sales-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.sales-card{background:linear-gradient(135deg,#fdf2f8,#fce7f3);border:1.5px solid #fbcfe8;border-radius:14px;padding:12px;text-align:center;}
+.sales-card .sc-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--rose);}
+.sales-card .sc-label{font-size:10px;color:#9d174d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+.sales-chart-wrap{background:white;border-radius:16px;border:1.5px solid #fce7f3;padding:14px;overflow:hidden;}
+.sales-chart-title{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.sales-chart-title span{font-size:10px;color:#9d174d;font-weight:500;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;}
+.bar-inner{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--rose),#fbcfe8);min-height:4px;transition:height 0.6s cubic-bezier(0.34,1.2,0.64,1);position:relative;}
+.bar-label{font-size:9px;color:#9d174d;font-weight:600;text-align:center;}
+.top-products{margin-top:12px;}
+.top-prod-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #fce7f3;}
+.top-prod-row:last-child{border-bottom:none;}
+.top-prod-name{font-size:12px;font-weight:600;color:var(--dark);display:flex;align-items:center;gap:6px;}
+.top-prod-amt{font-size:12px;font-weight:700;color:var(--rose);}
+.top-prod-bar{height:4px;background:linear-gradient(90deg,var(--rose),#fbcfe8);border-radius:2px;margin-top:3px;transition:width 0.6s ease;}
+.clear-sales-btn{width:100%;padding:8px;background:white;color:#ef4444;border:1.5px solid #fecaca;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:10px;transition:all 0.2s;}
+.clear-sales-btn:hover{background:#fee2e2;}
+
+</style>
+</head>
+<body>
+
+
+
+
+<!-- LOADING SCREEN — Cake Assembly Animation -->
+<div id="loadingOverlay">
+  <div class="cake-scene">
+    <!-- SVG Cake — line art style like the reference -->
+    <svg id="cakeSvg" viewBox="0 0 200 240" fill="none"
+         xmlns="http://www.w3.org/2000/svg"
+         stroke="#e11d72" stroke-width="3"
+         stroke-linecap="round" stroke-linejoin="round">
+
+      <!-- BASE PLATE -->
+      <g id="cakePlate" class="cake-part">
+        <rect x="30" y="218" width="140" height="8" rx="4"/>
+        <ellipse cx="100" cy="218" rx="70" ry="5"/>
+      </g>
+
+      <!-- BOTTOM LAYER (biggest) -->
+      <g id="cakeLayer1" class="cake-part">
+        <rect x="22" y="178" width="156" height="40" rx="6"/>
+        <!-- waves -->
+        <path d="M30 190 Q42 185 54 190 Q66 195 78 190 Q90 185 102 190 Q114 195 126 190 Q138 185 150 190 Q162 195 168 190"/>
+        <path d="M30 202 Q42 197 54 202 Q66 207 78 202 Q90 197 102 202 Q114 207 126 202 Q138 197 150 202 Q162 207 168 202"/>
+      </g>
+
+      <!-- MIDDLE LAYER -->
+      <g id="cakeLayer2" class="cake-part">
+        <rect x="38" y="138" width="124" height="40" rx="6"/>
+        <!-- waves -->
+        <path d="M46 150 Q57 145 68 150 Q79 155 90 150 Q101 145 112 150 Q123 155 134 150 Q145 145 154 150"/>
+        <path d="M46 162 Q57 157 68 162 Q79 167 90 162 Q101 157 112 162 Q123 167 134 162 Q145 157 154 162"/>
+      </g>
+
+      <!-- TOP LAYER (smallest) -->
+      <g id="cakeLayer3" class="cake-part">
+        <rect x="58" y="100" width="84" height="38" rx="6"/>
+        <!-- waves -->
+        <path d="M66 112 Q74 108 82 112 Q90 116 98 112 Q106 108 114 112 Q122 116 130 112 Q134 108 134 112"/>
+        <path d="M66 124 Q74 120 82 124 Q90 128 98 124 Q106 120 114 124 Q122 128 130 124"/>
+      </g>
+
+      <!-- CANDLE STICK -->
+      <g id="cakeCandle" class="cake-part">
+        <rect x="94" y="76" width="12" height="24" rx="3"/>
+        <!-- candle stripes -->
+        <line x1="94" y1="83" x2="106" y2="83"/>
+        <line x1="94" y1="90" x2="106" y2="90"/>
+      </g>
+
+      <!-- FLAME -->
+      <g id="cakeFlame" class="cake-part">
+        <ellipse id="flameShape" cx="100" cy="68" rx="5" ry="8"
+                 fill="#ff8800" stroke="#ffcc00" stroke-width="1.5"
+                 style="transform-origin:100px 76px;"/>
+        <!-- glow dot -->
+        <circle cx="100" cy="66" r="2" fill="#fff700" stroke="none"/>
+      </g>
+
+      <!-- DECORATIVE DOTS on bottom layer -->
+      <g id="cakeDots" class="cake-part">
+        <circle cx="50"  cy="195" r="3" fill="#f9a8d4" stroke="#e11d72" stroke-width="1.5"/>
+        <circle cx="70"  cy="188" r="2.5" fill="#f9a8d4" stroke="#e11d72" stroke-width="1.5"/>
+        <circle cx="130" cy="193" r="3" fill="#f9a8d4" stroke="#e11d72" stroke-width="1.5"/>
+        <circle cx="150" cy="186" r="2.5" fill="#f9a8d4" stroke="#e11d72" stroke-width="1.5"/>
+      </g>
+
+      <!-- STAR SPARKLES -->
+      <g id="cakeSparkles" class="cake-part">
+        <text x="15"  y="150" font-size="14" fill="#e11d72" stroke="none">✦</text>
+        <text x="170" y="140" font-size="10" fill="#f472b6" stroke="none">✦</text>
+        <text x="10"  y="110" font-size="8"  fill="#f9a8d4" stroke="none">✦</text>
+        <text x="175" y="190" font-size="12" fill="#e11d72" stroke="none">✦</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Brand name -->
+  <div class="loading-brand-wrap" id="loadingBrandWrap">
+    <div class="loading-brand-name">Shuuvi ❤️</div>
+    <div class="loading-brand-sub">Bakery &amp; Cafe</div>
+    <div class="loading-tagline">Baked fresh with love 🌸</div>
+  </div>
+</div>
+
+<nav class="anim" id="elNav">
+  <div class="nav-location">📍 Colaba, MU</div>
+  <div class="nav-logo" id="secretLogo" onclick="handleLogoTap()" style="cursor:pointer;user-select:none;"><span class="name">Shuuvi ❤️</span><span class="sub">Bakery & Cafe</span></div>
+  <div class="nav-right">
+    <a class="insta-btn" href="https://www.instagram.com/shu_uvi?igsh=dXZpaml2eGhlcnNk" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+    <button class="cart-btn" onclick="openOrder()">🛒<span class="cart-badge" id="cartBadge">0</span></button>
+  </div>
+</nav>
+
+<main>
+  <div class="hero anim" id="elHero">
+    <h1>Baked Fresh,<br/>With <span>Love</span> Every Day!</h1>
+    <p>From custom cakes to soft brownies — choose your favourite and order with ease!</p>
+  </div>
+  <div class="tabs anim" id="elTabs">
+    <div class="tab active" onclick="filterProducts('all',this)">All</div>
+    <div class="tab" onclick="filterProducts('cakes',this)">Cakes 🎂</div>
+    <div class="tab" onclick="filterProducts('cupcakes',this)">Cupcakes 🧁</div>
+    <div class="tab" onclick="filterProducts('brownies',this)">Brownies 🍫</div>
+    <div class="tab" onclick="filterProducts('special',this)">Special ✨</div>
+  </div>
+  <div class="products-wrap anim" id="elProducts">
+    <div class="products-label">
+      <div class="products-label-line"></div>
+      <div class="products-label-text" id="productsLabelText">🎂 Our Collection</div>
+      <div class="products-label-line right"></div>
+    </div>
+    <div class="products" id="productsRow"></div>
+  </div>
+  <div class="plate-section anim" id="elTray">
+    <div class="plate-wrap">
+      <div class="tray-bg tray-bg-fallback" id="plate">
+        <img class="tray-img-el" id="trayImgEl" src="" alt="" style="display:none;"/>
+        <div class="tray-items-overlay" id="plateInner"></div>
+        <div class="plate-hint" id="plateHint">Add items above ↑</div>
+      </div>
+    </div>
+    <button class="review-btn" id="reviewBtn" onclick="openOrder()">Review Order →</button>
+  </div>
+</main>
+
+<section class="gallery-section">
+  <div class="gallery-bg"></div>
+  <div class="gallery-float-emoji" style="top:80px;left:10px;">🎂</div>
+  <div class="gallery-float-emoji" style="top:60px;right:14px;animation-delay:0.7s;">🧁</div>
+  <div class="gallery-float-emoji" style="top:45%;left:6px;animation-delay:1.2s;">🍰</div>
+  <div class="gallery-float-emoji" style="top:40%;right:8px;animation-delay:0.4s;">🎉</div>
+  <div class="gallery-float-emoji" style="bottom:80px;left:12px;animation-delay:1.8s;">🍫</div>
+  <div class="gallery-float-emoji" style="bottom:100px;right:10px;animation-delay:0.9s;">❤️</div>
+  <div class="gallery-content">
+    <div class="gallery-heading">
+      <div class="eyebrow"><span></span>Sweet Memories<span></span></div>
+      <h2>Our <em>Happy</em> Clients 💕</h2>
+      <p>Every cake tells a story — here are some of our favourites!</p>
+    </div>
+    <div class="hearts-row">
+      <div class="heart-tag" style="animation-delay:0.1s">🎂 Custom Cakes</div>
+      <div class="heart-tag" style="animation-delay:0.2s">🧁 Cupcakes</div>
+      <div class="heart-tag" style="animation-delay:0.3s">🍫 Brownies</div>
+      <div class="heart-tag" style="animation-delay:0.4s">❤️ Baked with Love</div>
+    </div>
+    <div class="gallery-ribbon-row">
+      <div class="ribbon-line"></div><div class="ribbon-knot">🎀</div>
+      <div class="ribbon-line"></div><div class="ribbon-knot">🎀</div>
+      <div class="ribbon-line"></div><div class="ribbon-knot">🎀</div>
+      <div class="ribbon-line"></div>
+    </div>
+    <div class="gallery-col-wrap" id="clientGallery">
+      <div class="gallery-skeleton"></div><div class="gallery-skeleton"></div>
+      <div class="gallery-skeleton"></div><div class="gallery-skeleton"></div>
+    </div>
+    <div class="gallery-ribbon-row" style="margin-top:12px;">
+      <div class="ribbon-line"></div><div class="ribbon-knot">🎀</div>
+      <div class="ribbon-line"></div><div class="ribbon-knot">🎀</div>
+      <div class="ribbon-line"></div><div class="ribbon-knot">🎀</div>
+      <div class="ribbon-line"></div>
+    </div>
+    <div class="gallery-footer-strip">
+      <span>🎂</span><span style="animation-delay:0.2s">✨</span><span style="animation-delay:0.4s">🧁</span>
+      <span style="animation-delay:0.6s">🎉</span><span style="animation-delay:0.8s">🍰</span>
+      <span style="animation-delay:1s">❤️</span><span style="animation-delay:1.2s">🎊</span>
+      <span style="animation-delay:1.4s">🍫</span><span style="animation-delay:1.6s">🎂</span>
+    </div>
+  </div>
+  <!-- FOLLOW ON INSTAGRAM -->
+  <div class="follow-section">
+    <h3>Follow Us 💕</h3>
+    <p>See our latest creations on Instagram!</p>
+    <a class="insta-btn" href="https://www.instagram.com/shu_uvi?igsh=dXZpaml2eGhlcnNk" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> @shu_uvi — Follow Us
+    </a>
+  </div>
+
+</section>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt=""/>
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay" onclick="handleOverlayClick(event)">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>⚙️ Admin Panel</h2>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+      <div id="fbStatus" class="firebase-status loading">🔄 Connecting to Firebase...</div>
+
+      <div class="admin-section-title">🍽️ Tray / Plate Image</div>
+      <div class="plate-upload-box" onclick="document.getElementById('plateImgInput').click()">
+        <img id="platePreview" class="plate-preview" src="" alt="" style="display:none;"/>
+        <div id="plateUploadIcon" style="font-size:32px;">🍽️</div>
+        <p>Tap to upload your tray image</p>
+      </div>
+      <input type="file" id="plateImgInput" accept="image/*" onchange="uploadTrayImage(event)"/>
+
+      <div class="admin-section-title">📸 Happy Clients Gallery</div>
+      <div class="gallery-upload-area" onclick="document.getElementById('galleryImgInput').click()">
+        <div class="upload-icon">🖼️</div>
+        <p>Tap to upload client photos</p>
+        <small>Select multiple — auto saved to Cloudinary + Firebase</small>
+      </div>
+      <div class="upload-progress" id="uploadProgress">
+        <div class="upload-progress-bar" id="uploadProgressBar"></div>
+      </div>
+      <div class="gallery-admin-grid" id="galleryAdminGrid"></div>
+      <input type="file" id="galleryImgInput" accept="image/*" multiple onchange="uploadGalleryImages(event)"/>
+
+      <div class="admin-section-title">⚖️ Weight & Pricing</div>
+      <div style="font-size:11px;color:#9d174d;margin-bottom:8px;">Set base price per weight. Each product uses these as multipliers.</div>
+      <div class="weight-pricing-grid" id="weightPricingGrid"></div>
+      <div class="weight-add-row">
+        <input class="weight-add-input" id="newWeightLabel" placeholder="Label e.g. 3 Kg"/>
+        <input class="weight-add-input" id="newWeightPrice" placeholder="Price ₹" type="number" style="max-width:90px;"/>
+        <button class="weight-add-btn" onclick="addWeightOption()">+ Add</button>
+      </div>
+
+      <div class="admin-section-title">🎂 Products</div>
+      <div id="adminProductList"></div>
+      <button class="add-product-btn" onclick="addNewProduct()">+ Add New Product</button>
+      <button class="admin-save-btn" onclick="saveAdmin()">💾 Save & Apply</button>
+
+      <div class="admin-section-title">📊 Sales Analytics</div>
+      <div class="sales-section">
+        <div class="sales-summary">
+          <div class="sales-card"><div class="sc-val" id="totalRevenue">₹0</div><div class="sc-label">Total Revenue</div></div>
+          <div class="sales-card"><div class="sc-val" id="totalOrders">0</div><div class="sc-label">Total Orders</div></div>
+          <div class="sales-card"><div class="sc-val" id="avgOrder">₹0</div><div class="sc-label">Avg Order Value</div></div>
+          <div class="sales-card"><div class="sc-val" id="topItem">—</div><div class="sc-label">Best Seller</div></div>
+        </div>
+        <div class="sales-chart-wrap">
+          <div class="sales-chart-title">Orders Last 7 Days <span id="chartDateRange"></span></div>
+          <div class="bar-chart" id="salesBarChart"></div>
+        </div>
+        <div class="sales-chart-wrap" style="margin-top:10px;">
+          <div class="sales-chart-title">Top Products</div>
+          <div class="top-products" id="topProductsList"></div>
+        </div>
+        <button class="clear-sales-btn" onclick="clearSalesData()">🗑 Clear Sales Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="prodImgInput" accept="image/*" onchange="uploadProdImg(event)"/>
+
+<!-- ORDER PAGE -->
+<div class="order-page" id="orderPage">
+
+  <!-- Header -->
+  <div class="order-header">
+    <button class="back-btn" onclick="closeOrder()">←</button>
+    <h2>🛒 Your Order</h2>
+  </div>
+
+  <!-- Mini tray preview -->
+  <div class="order-plate">
+    <div class="order-plate-mini" id="orderPlateMini"></div>
+  </div>
+
+  <!-- Order Summary Card -->
+  <div class="order-card" id="orderSummaryCard">
+    <div class="order-section-title">📦 Order Summary</div>
+    <div id="orderItems"></div>
+    <hr class="divider"/>
+    <div class="total-row"><span>Order Total</span><span id="orderSubtotal"></span></div>
+    <div class="total-row"><span>🚚 Delivery</span><span>₹30</span></div>
+    <div class="total-row grand"><span>💰 Grand Total</span><span id="orderTotal"></span></div>
+  </div>
+
+  <!-- Customer Details Card -->
+  <div class="order-card" id="orderFormCard">
+    <div class="order-section-title">👤 Your Details</div>
+
+    <div class="order-input-row">
+      <input class="order-input" id="custOrderName"  type="text" placeholder="Your Name *"/>
+      <input class="order-input" id="custOrderPhone" type="tel"  placeholder="Phone Number *"/>
+    </div>
+    <input  class="order-input" id="custOrderFlat"  type="text" placeholder="Flat / House No. *"/>
+    <input  class="order-input" id="custOrderArea"  type="text" placeholder="Area / Street *"/>
+    <div class="order-input-row">
+      <input class="order-input" id="custOrderCity"  type="text" placeholder="City *" value="Mumbai"/>
+      <input class="order-input" id="custOrderPin"   type="text" placeholder="Pincode"/>
+    </div>
+    <textarea class="order-input order-textarea" id="custOrderNote"
+      placeholder="Special note? e.g. Write Happy Birthday on cake 🎂"></textarea>
+
+    <!-- ORDER ON WHATSAPP BUTTON -->
+    <button class="checkout-btn"
+      onclick="placeOrderWhatsApp()"
+      style="background:#25D366;box-shadow:0 6px 20px rgba(37,211,102,0.4);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px;">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:white;flex-shrink:0;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Order on WhatsApp
+    </button>
+    <p style="text-align:center;font-size:11px;color:#9d174d;margin-top:8px;opacity:0.75;">
+      You'll be redirected to WhatsApp with your full order 💬
+    </p>
+  </div>
+
+  <!-- Thank You Screen -->
+  <div class="thankyou" id="thankYou">
+    <div class="icon">🎉🎂❤️</div>
+    <h2>Order Sent!</h2>
+    <p>Your order has been sent to Shuuvi Bakery on WhatsApp!<br/>We'll confirm & share the payment QR shortly 💕</p>
+    <a href="https://www.instagram.com/shu_uvi?igsh=dXZpaml2eGhlcnNk" target="_blank"
+       style="display:inline-block;margin-top:16px;background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);color:white;padding:10px 20px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;">
+      📸 Follow us @shu_uvi
+    </a>
+  </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAnalytics }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js';
+import { initializeAppCheck, ReCaptchaV3Provider }
+                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
+import { getFirestore, doc, getDoc, setDoc }
+                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+// Firebase Storage not used — all images go through Cloudinary
+
+// ── FIREBASE CONFIG ──
+
+  /* ═══════════════════════════════════════════════════════════
+     FIREBASE SECURITY — Paste these rules in Firebase Console:
+
+     FIRESTORE RULES (Firestore → Rules):
+     ─────────────────────────────────────
+     rules_version = '2';
+     service cloud.firestore {
+       match /databases/{database}/documents {
+         match /shuuvi/{document} {
+           allow read: if true;
+           allow write: if request.auth != null ||
+             request.headers.keys().hasAll(['x-firebase-appcheck']);
+         }
+       }
+     }
+  ═══════════════════════════════════════════════════════════ */
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDV2io6wTTyd4oPXUyfRB8mbPO-ThuyDOw",
+  authDomain:        "dhe-krishna-metal-industries.firebaseapp.com",
+  projectId:         "dhe-krishna-metal-industries",
+  storageBucket:     "dhe-krishna-metal-industries.firebasestorage.app",
+  messagingSenderId: "153445277536",
+  appId:             "1:153445277536:web:909dcb9e6f03ed2bfd4805",
+  measurementId:     "G-56DGSMY60J"
+};
+
+const CLOUD_NAME    = 'dmaqbbeph';
+const CLOUD_PRESET  = 'rkmi_uploads';
+const CORNER_EMOJIS = [['🎂','🌸','🎉','✨'],['🧁','💕','🎊','🍰'],['🍫','❤️','🌷','🎀'],['👑','🎂','✨','🍰'],['🎉','🧁','💖','🎊'],['🌸','🎂','❤️','🍫']];
+const DELIVERY = 30;
+const CATEGORY_LABELS = {all:'🎂 Our Collection',cakes:'🎂 Cakes',cupcakes:'🧁 Cupcakes',brownies:'🍫 Brownies',special:'✨ Specials'};
+
+const DEFAULT_PRODUCTS = [
+  {id:1,name:"Birthday Cake",  desc:"Classic sponge with cream frosting, customised just for you!",price:599,emoji:"🎂",cat:"cakes",img:null},
+  {id:2,name:"Princess Cake",  desc:"Pretty pink layered cake with edible glitter & flowers.",     price:799,emoji:"👑",cat:"cakes",img:null},
+  {id:3,name:"Spiderman Cake", desc:"Fondant superhero cake, perfect for your little hero!",       price:899,emoji:"🕷️",cat:"cakes",img:null},
+  {id:4,name:"Chocolate Cake", desc:"Rich dark chocolate ganache, moist layers, heaven in a bite.",price:499,emoji:"🍫",cat:"cakes",img:null},
+  {id:5,name:"Cupcake Box",    desc:"Box of 6 assorted cupcakes baked with love.",                 price:249,emoji:"🧁",cat:"cupcakes",img:null},
+  {id:6,name:"Pink Cupcake",   desc:"Soft vanilla base with strawberry buttercream swirl.",        price:149,emoji:"🩷",cat:"cupcakes",img:null},
+  {id:7,name:"Choco Cupcake",  desc:"Double chocolate cupcake with fudge filling.",                price:149,emoji:"🍮",cat:"cupcakes",img:null},
+  {id:8,name:"Fudge Brownie",  desc:"Dense, chewy, ultra-chocolatey brownie squares.",             price:199,emoji:"🟫",cat:"brownies",img:null},
+  {id:9,name:"Walnut Brownie", desc:"Crunchy walnut brownie — healthy meets indulgent!",           price:229,emoji:"🌰",cat:"brownies",img:null},
+  {id:10,name:"Cheesecake",    desc:"Creamy NY-style baked cheesecake with berry compote.",        price:349,emoji:"🍰",cat:"special",img:null},
+  {id:11,name:"Red Velvet",    desc:"Velvety red cake with cream cheese frosting.",                price:549,emoji:"❤️",cat:"special",img:null},
+  {id:12,name:"Gift Hamper",   desc:"Curated gift box with cakes, brownies & cookies.",            price:999,emoji:"🎁",cat:"special",img:null},
+];
+
+let app, analytics, db, fbReady = false;
+let products = DEFAULT_PRODUCTS.map(p=>({...p}));
+let galleryImages = [];
+let cart={}, plateItems=[], currentFilter='all', plateCustomImg=null, editingProdImgId=null, nextId=13;
+
+// ── INIT FIREBASE ──
+async function initFirebase() {
+  const status = document.getElementById('fbStatus');
+  try {
+    // config is set — proceed
+    app     = initializeApp(firebaseConfig);
+    db      = getFirestore(app);
+    fbReady = true;
+    status.className='firebase-status ok';
+    status.textContent='✅ Firebase connected!';
+  } catch(e) {
+    fbReady = false;
+    status.className='firebase-status err';
+    status.textContent='⚠️ Firebase not set up — using local storage. Paste your config in the code.';
+    console.warn('Firebase init failed:', e.message);
+  }
+}
+
+// ── FIREBASE SAVE/LOAD ──
+async function fbSaveProducts() {
+  if (!fbReady) return localSave('shuuvi_products', products);
+  try {
+    await setDoc(doc(db,'shuuvi','products'), { list: products, nextId, updatedAt: Date.now() });
+  } catch(e) { localSave('shuuvi_products', products); }
+}
+async function fbLoadProducts() {
+  if (!fbReady) return localLoad('shuuvi_products') || DEFAULT_PRODUCTS.map(p=>({...p}));
+  try {
+    const snap = await getDoc(doc(db,'shuuvi','products'));
+    if (snap.exists()) {
+      const d = snap.data();
+      nextId = d.nextId || 13;
+      return d.list || DEFAULT_PRODUCTS.map(p=>({...p}));
+    }
+  } catch(e) {}
+  return localLoad('shuuvi_products') || DEFAULT_PRODUCTS.map(p=>({...p}));
+}
+
+async function fbSaveTray(url) {
+  if (!fbReady) return localSave('shuuvi_tray', url);
+  try {
+    await setDoc(doc(db,'shuuvi','tray'), { url, updatedAt: Date.now() });
+  } catch(e) { localSave('shuuvi_tray', url); }
+}
+async function fbLoadTray() {
+  if (!fbReady) return localLoad('shuuvi_tray');
+  try {
+    const snap = await getDoc(doc(db,'shuuvi','tray'));
+    if (snap.exists()) return snap.data().url;
+  } catch(e) {}
+  return localLoad('shuuvi_tray');
+}
+
+async function fbSaveGallery() {
+  if (!fbReady) return localSave('shuuvi_gallery', galleryImages);
+  try {
+    await setDoc(doc(db,'shuuvi','gallery'), { images: galleryImages, updatedAt: Date.now() });
+  } catch(e) { localSave('shuuvi_gallery', galleryImages); }
+}
+async function fbLoadGallery() {
+  if (!fbReady) return localLoad('shuuvi_gallery') || [];
+  try {
+    const snap = await getDoc(doc(db,'shuuvi','gallery'));
+    if (snap.exists()) return snap.data().images || [];
+  } catch(e) {}
+  return localLoad('shuuvi_gallery') || [];
+}
+
+// localStorage fallbacks
+function localSave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function localLoad(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null;}catch(e){return null;}}
+
+// ── UPLOAD ANY IMAGE TO CLOUDINARY (used for ALL images — gallery, products, tray) ──
+// Cloudinary works without any auth rules — just needs unsigned preset
+async function uploadToCloudinaryGeneric(file, folder) {
+  // Extra client-side guards before upload
+  const MAX_SIZE = 8 * 1024 * 1024; // 8MB max
+  const ALLOWED  = ['image/jpeg','image/png','image/webp','image/gif'];
+  if (file.size > MAX_SIZE)          throw new Error('File too large (max 8MB)');
+  if (!ALLOWED.includes(file.type))  throw new Error('Only JPG/PNG/WEBP images allowed');
+
+  const fd = new FormData();
+  fd.append('file',          file);
+  fd.append('upload_preset', CLOUD_PRESET);
+  fd.append('folder',        folder);
+  fd.append('cloud_name',    CLOUD_NAME);
+  const status = document.getElementById('fbStatus');
+
+  // Simulate progress since Cloudinary fetch doesn't give progress events
+  let pct = 0;
+  const fakeProgress = setInterval(() => {
+    pct = Math.min(pct + 12, 85);
+    status.textContent = `⏳ Uploading… ${pct}%`;
+    status.className   = 'firebase-status loading';
+  }, 200);
+
+  try {
+    const res  = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      { method: 'POST', body: fd }
+    );
+    const data = await res.json();
+    clearInterval(fakeProgress);
+    status.textContent = '⏳ Uploading… 100%';
+
+    if (data.secure_url) {
+      console.log('✅ Cloudinary upload success:', data.secure_url);
+      return { url: data.secure_url, public_id: data.public_id };
+    }
+    const msg = data.error?.message || JSON.stringify(data);
+    console.error('Cloudinary error:', msg);
+    throw new Error('Cloudinary: ' + msg);
+  } catch(err) {
+    clearInterval(fakeProgress);
+    throw err;
+  }
+}
+
+// Keep old name for gallery calls
+async function uploadToCloudinary(file) {
+  return uploadToCloudinaryGeneric(file, 'shuuvi_clients');
+}
+
+
+// ── BOOTSTRAP ──
+window.addEventListener('DOMContentLoaded', async () => {
+  // ── START ANIMATION IMMEDIATELY — before any Firebase calls ──
+  runCakeLoadingAnimation();
+
+  // Firebase and data load in background
+  await initFirebase();
+
+  // Load all data from Firebase (or fallback)
+  products       = await fbLoadProducts();
+  plateCustomImg = await fbLoadTray();
+  galleryImages  = await fbLoadGallery();
+
+  // Stagger page animations
+  [{id:'elNav',a:'fadeDown'},{id:'elHero',a:'fadeUp'},{id:'elTabs',a:'fadeUp'},{id:'elProducts',a:'fadeUp'},{id:'elTray',a:'fadeUp'}]
+    .forEach((s,i)=>{
+      setTimeout(()=>{
+        const el=document.getElementById(s.id);
+        if(el) el.style.cssText+=`animation:${s.a} 0.6s cubic-bezier(0.34,1.2,0.64,1) both;`;
+      },i*500);
+    });
+
+  if (plateCustomImg) applyPlateImg();
+  renderGallery();
+  renderProducts(3*500+200);
+
+  // animation started above
+
+  // Scroll reveal gallery
+  new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        document.querySelectorAll('.gallery-item').forEach((el,i)=>setTimeout(()=>el.classList.add('appear'),i*120));
+      }
+    });
+  },{threshold:0.1}).observe(document.querySelector('.gallery-section'));
+});
+
+// ── PRODUCTS ──
+const CATEGORY_MAP = {all:'🎂 Our Collection',cakes:'🎂 Cakes',cupcakes:'🧁 Cupcakes',brownies:'🍫 Brownies',special:'✨ Specials'};
+window.filterProducts = (cat, tabEl) => {
+  currentFilter = cat;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById('productsLabelText').textContent = CATEGORY_MAP[cat]||'🎂 Our Collection';
+  renderProducts(0);
+};
+
+function renderProducts(delay) {
+  const row = document.getElementById('productsRow');
+  row.innerHTML='';
+  const list = currentFilter==='all' ? products : products.filter(p=>p.cat===currentFilter);
+  list.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='card';
+    const img=p.img?`<img src="${p.img}" alt="${p.name}"/>`:`<span class="card-img-emoji">${p.emoji}</span>`;
+    div.innerHTML=`<div class="card-img-wrap">${img}</div><div class="card-name">${p.name}</div><div class="card-desc">${p.desc}</div><div class="card-price">₹${p.price}</div><button class="add-btn" id="btn-${p.id}" onclick="addToCart(${p.id})">+</button>`;
+    row.appendChild(div);
+    setTimeout(()=>div.classList.add('pop'),(delay||0)+i*500);
+  });
+}
+
+// ── CART ──
+window.addToCart = (id) => {
+  const p=products.find(x=>x.id==id);if(!p)return;
+  cart[id]=(cart[id]||0)+1;
+  const btn=document.getElementById('btn-'+id);
+  if(btn){btn.classList.add('added');setTimeout(()=>btn.classList.remove('added'),400);}
+  plateItems.push({id:p.id,img:p.img,emoji:p.emoji});
+  bounceTray(); renderPlateItems(); updateBadge(); showReviewBtn();
+};
+function bounceTray(){const t=document.getElementById('plate');t.classList.remove('bounce');void t.offsetWidth;t.classList.add('bounce');setTimeout(()=>t.classList.remove('bounce'),450);}
+function renderPlateItems(){
+  const inner=document.getElementById('plateInner');
+  const hint=document.getElementById('plateHint');
+  inner.innerHTML='';
+  if(!plateItems.length){if(hint)hint.style.opacity='1';return;}
+  if(hint)hint.style.opacity='0';
+  plateItems.slice(-3).forEach((item,i,arr)=>{
+    const isNew=i===arr.length-1;
+    if(item.img){const img=document.createElement('img');img.src=item.img;img.className='plate-item-img';if(!isNew){img.style.animation='none';img.style.opacity='1';}inner.appendChild(img);}
+    else{const span=document.createElement('span');span.className='plate-item-emoji';span.textContent=item.emoji;if(!isNew){span.style.animation='none';span.style.opacity='1';}inner.appendChild(span);}
+  });
+}
+function updateBadge(){const t=Object.values(cart).reduce((a,b)=>a+b,0);const b=document.getElementById('cartBadge');b.textContent=t;b.classList.toggle('show',t>0);}
+function showReviewBtn(){document.getElementById('reviewBtn').classList.add('visible');}
+
+// ── TRAY IMAGE UPLOAD ──
+window.uploadTrayImage = async (e) => {
+  const file=e.target.files[0];if(!file)return;
+  const status=document.getElementById('fbStatus');
+  status.textContent='⏳ Uploading tray image...';status.className='firebase-status loading';
+  try {
+    let url = null;
+    try {
+      // Use Cloudinary — no auth rules needed, always works
+      const result = await uploadToCloudinaryGeneric(file, 'shuuvi_tray');
+      url = result.url;
+    } catch(cloudErr) {
+      console.warn('Cloudinary failed for tray, using base64 fallback:', cloudErr.message);
+      url = await fileToBase64(file);
+    }
+    plateCustomImg = url;
+    await fbSaveTray(url);   // save URL to Firestore
+    applyPlateImg();
+    document.getElementById('platePreview').src = url;
+    document.getElementById('platePreview').style.display = 'block';
+    document.getElementById('plateUploadIcon').style.display = 'none';
+    status.textContent='✅ Tray saved!';status.className='firebase-status ok';
+  } catch(err) {
+    console.error('Tray upload error:', err);
+    status.textContent='❌ Error: '+err.message;status.className='firebase-status err';
+  }
+};
+
+function applyPlateImg(){
+  if(!plateCustomImg)return;
+  const tray=document.getElementById('plate');
+  const img=document.getElementById('trayImgEl');
+  tray.classList.remove('tray-bg-fallback');
+  tray.style.background='transparent';tray.style.boxShadow='none';tray.style.borderRadius='0';
+  img.src=plateCustomImg;img.style.display='block';
+  const overlay=document.getElementById('plateInner');
+  overlay.style.bottom='15%';overlay.style.top='auto';overlay.style.height='60%';
+}
+
+// ── PRODUCT IMAGE UPLOAD ──
+window.triggerProdImgUpload = (id)=>{editingProdImgId=id;document.getElementById('prodImgInput').click();};
+window.uploadProdImg = async (e) => {
+  const file=e.target.files[0];if(!file||!editingProdImgId)return;
+  const id=editingProdImgId;
+  const status=document.getElementById('fbStatus');
+  status.textContent='⏳ Uploading product image...';status.className='firebase-status loading';
+  try {
+    let url = null;
+    try {
+      // Use Cloudinary — same as gallery, no Firebase Storage rules needed
+      const result = await uploadToCloudinaryGeneric(file, 'shuuvi_products');
+      url = result.url;
+    } catch(cloudErr) {
+      console.warn('Cloudinary failed for product, using base64 fallback:', cloudErr.message);
+      url = await fileToBase64(file);
+    }
+    const p = products.find(x=>x.id==id);
+    if(p) p.img = url;
+    const wrap = document.getElementById('apimg-'+id);
+    if(wrap) wrap.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"/>`;
+    await fbSaveProducts();   // save Cloudinary URL in Firestore
+    renderProducts(0);
+    status.textContent='✅ Product image saved!';status.className='firebase-status ok';
+  } catch(err){
+    console.error('Product upload error:', err);
+    status.textContent='❌ Error: '+err.message;status.className='firebase-status err';
+  }
+  e.target.value='';
+};
+
+// ── GALLERY UPLOAD ──
+window.uploadGalleryImages = async (e) => {
+  const files=Array.from(e.target.files);if(!files.length)return;
+  const progress=document.getElementById('uploadProgress');
+  const bar=document.getElementById('uploadProgressBar');
+  const status=document.getElementById('fbStatus');
+  progress.style.display='block';
+  for(let idx=0;idx<files.length;idx++){
+    bar.style.width=Math.round((idx/files.length)*100)+'%';
+    status.textContent=`⏳ Uploading photo ${idx+1}/${files.length}...`;
+    status.className='firebase-status loading';
+    try {
+      const result = await uploadToCloudinary(files[idx]);
+      galleryImages.push(result);
+      console.log('✅ Cloudinary upload success:', result.url);
+    } catch(err){
+      console.warn('Cloudinary failed, falling back to base64:', err.message);
+      // fallback: store as base64 locally + in Firebase
+      const url = await fileToBase64(files[idx]);
+      galleryImages.push({url, public_id:'local_'+Date.now()});
+    }
+    await fbSaveGallery();
+    renderGallery();
+  }
+  bar.style.width='100%';
+  status.textContent='✅ Photos saved!';status.className='firebase-status ok';
+  setTimeout(()=>{progress.style.display='none';bar.style.width='0%';},800);
+  e.target.value='';
+};
+
+// ── GALLERY RENDER ──
+function renderGallery(){
+  const grid=document.getElementById('clientGallery');
+  grid.innerHTML='';
+  if(!galleryImages.length){
+    grid.innerHTML='<div class="gallery-empty"><div class="icon">📸</div><p>No photos yet — upload from Admin!</p></div>';
+    return;
+  }
+  galleryImages.forEach((img,i)=>{
+    const corners=CORNER_EMOJIS[i%CORNER_EMOJIS.length];
+    const item=document.createElement('div');item.className='gallery-item';
+    item.innerHTML=`<img src="${img.url}" loading="lazy"/><div class="gallery-item-overlay">❤️</div><span class="corner-emoji tl">${corners[0]}</span><span class="corner-emoji tr">${corners[1]}</span><span class="corner-emoji bl">${corners[2]}</span><span class="corner-emoji br">${corners[3]}</span>`;
+    item.onclick=()=>openLightbox(img.url);
+    grid.appendChild(item);
+    setTimeout(()=>item.classList.add('appear'),i*120);
+  });
+  renderGalleryAdminGrid();
+}
+function renderGalleryAdminGrid(){
+  const grid=document.getElementById('galleryAdminGrid');if(!grid)return;
+  grid.innerHTML='';
+  galleryImages.forEach((img,i)=>{
+    const div=document.createElement('div');div.className='gallery-admin-img';
+    div.innerHTML=`<img src="${img.url}" alt=""/><button class="del-img" onclick="deleteGalleryImg(${i})">✕</button>`;
+    grid.appendChild(div);
+  });
+}
+window.deleteGalleryImg = async (idx) => {
+  galleryImages.splice(idx,1);
+  await fbSaveGallery();
+  renderGallery();
+};
+
+window.openLightbox  = (url)=>{document.getElementById('lightboxImg').src=url;document.getElementById('lightbox').classList.add('open');};
+window.closeLightbox = ()=>{document.getElementById('lightbox').classList.remove('open');document.getElementById('lightboxImg').src='';};
+
+// ── ADMIN ──
+window.openAdmin = ()=>{renderAdminProducts();renderGalleryAdminGrid();document.getElementById('adminOverlay').classList.add('open');};
+window.closeAdmin = ()=>document.getElementById('adminOverlay').classList.remove('open');
+window.handleOverlayClick = (e)=>{if(e.target===document.getElementById('adminOverlay'))closeAdmin();};
+
+function renderAdminProducts(){
+  const list=document.getElementById('adminProductList');list.innerHTML='';
+  if(plateCustomImg){document.getElementById('platePreview').src=plateCustomImg;document.getElementById('platePreview').style.display='block';document.getElementById('plateUploadIcon').style.display='none';}
+  products.forEach(p=>{
+    const div=document.createElement('div');div.className='admin-product';div.id='admin-prod-'+p.id;
+    const imgHTML=p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"/>`:`<span style="font-size:28px;">${p.emoji}</span>`;
+    div.innerHTML=`<div class="admin-product-top"><div class="admin-prod-img-wrap"><div class="admin-prod-img" id="apimg-${p.id}">${imgHTML}</div><div class="upload-overlay" onclick="triggerProdImgUpload(${p.id})">📷</div></div><div class="admin-prod-fields"><input class="admin-input" id="aname-${p.id}" value="${p.name}" placeholder="Product name"/><div class="admin-input-row"><input class="admin-input" id="aprice-${p.id}" value="${p.price}" placeholder="₹" type="number" style="width:80px;"/><select class="admin-input admin-cat-select" id="acat-${p.id}" style="flex:1;"><option value="cakes" ${p.cat==='cakes'?'selected':''}>Cakes</option><option value="cupcakes" ${p.cat==='cupcakes'?'selected':''}>Cupcakes</option><option value="brownies" ${p.cat==='brownies'?'selected':''}>Brownies</option><option value="special" ${p.cat==='special'?'selected':''}>Special</option></select></div></div></div><textarea class="admin-input admin-desc" id="adesc-${p.id}" placeholder="Description...">${p.desc}</textarea><div style="text-align:right;margin-top:6px;"><button onclick="deleteProduct(${p.id})" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;font-weight:600;">🗑 Remove</button></div>`;
+    list.appendChild(div);
+  });
+}
+
+window.addNewProduct = ()=>{
+  products.push({id:nextId++,name:'New Product',desc:'Describe your product here...',price:199,emoji:'🍰',cat:'cakes',img:null});
+  renderAdminProducts();
+  document.getElementById('adminProductList').lastChild.scrollIntoView({behavior:'smooth'});
+};
+window.deleteProduct = (id)=>{
+  if(!confirm('Remove this product?'))return;
+  products=products.filter(p=>p.id!=id);delete cart[id];
+  renderAdminProducts();
+};
+window.saveAdmin = async ()=>{
+  products.forEach(p=>{
+    const n=document.getElementById('aname-'+p.id);
+    const pr=document.getElementById('aprice-'+p.id);
+    const d=document.getElementById('adesc-'+p.id);
+    const c=document.getElementById('acat-'+p.id);
+    if(n)p.name=n.value.trim();if(pr)p.price=parseInt(pr.value)||0;if(d)p.desc=d.value.trim();if(c)p.cat=c.value;
+  });
+  const btn=document.querySelector('.admin-save-btn');btn.textContent='⏳ Saving...';
+  await fbSaveProducts();
+  if(plateCustomImg)applyPlateImg();
+  closeAdmin();renderProducts(0);renderPlateItems();
+  btn.textContent='💾 Save & Apply';
+};
+
+// ── ORDER PAGE ──
+window.openOrder = ()=>{
+  if(!Object.keys(cart).filter(k=>cart[k]>0).length)return;
+  const page = document.getElementById('orderPage');
+  page.classList.add('open');
+  document.getElementById('thankYou').classList.remove('show');
+  // Make sure cards are visible
+  const sc = document.getElementById('orderSummaryCard');
+  const fc = document.getElementById('orderFormCard');
+  if(sc) sc.style.display='block';
+  if(fc) fc.style.display='block';
+  renderOrderPage();
+};
+window.closeOrder = ()=>document.getElementById('orderPage').classList.remove('open');
+function renderOrderPage(){
+  const ids=Object.keys(cart).filter(k=>cart[k]>0);
+  const mini=document.getElementById('orderPlateMini');mini.innerHTML='';
+  ids.forEach(id=>{const p=products.find(x=>x.id==id);if(!p)return;if(p.img){const i=document.createElement('img');i.src=p.img;i.style.cssText='width:28px;height:28px;border-radius:6px;object-fit:cover;';mini.appendChild(i);}else{const s=document.createElement('span');s.textContent=p.emoji;s.style.fontSize='22px';mini.appendChild(s);}});
+  const container=document.getElementById('orderItems');container.innerHTML='';let subtotal=0;
+  ids.forEach(id=>{const p=products.find(x=>x.id==id);if(!p)return;subtotal+=p.price*cart[id];const row=document.createElement('div');row.className='order-item';const thumb=p.img?`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;"/>`:`<span>${p.emoji}</span>`;row.innerHTML=`<div class="order-item-left"><div class="order-item-thumb">${thumb}</div><div><div class="order-item-name">${p.name}</div><div class="order-item-price">₹${p.price} each</div></div></div><div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-num">${cart[id]}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div>`;container.appendChild(row);});
+  document.getElementById('orderSubtotal').textContent='₹'+subtotal;
+  document.getElementById('orderTotal').textContent='₹'+(subtotal+DELIVERY);
+}
+window.changeQty = (id,delta)=>{
+  cart[id]=(cart[id]||0)+delta;
+  if(delta===-1){const idx=plateItems.map(x=>x.id).lastIndexOf(Number(id));if(idx>-1){plateItems.splice(idx,1);renderPlateItems();}}
+  else if(delta===1){const p=products.find(x=>x.id==id);if(p){plateItems.push({id:p.id,img:p.img,emoji:p.emoji});renderPlateItems();}}
+  if(cart[id]<=0)delete cart[id];updateBadge();
+  if(!Object.keys(cart).filter(k=>cart[k]>0).length){plateItems=[];renderPlateItems();document.getElementById('reviewBtn').classList.remove('visible');closeOrder();return;}
+  renderOrderPage();
+};
+window.checkout = ()=>{document.getElementById('thankYou').classList.add('show');document.getElementById('orderItems').innerHTML='';cart={};plateItems=[];renderPlateItems();document.getElementById('reviewBtn').classList.remove('visible');updateBadge();};
+
+// ═══════════════════════════════════════════════════
+//  WHATSAPP ORDER — single flow with customer details
+// ═══════════════════════════════════════════════════
+const WA_NUMBER = '919967845372';
+
+window.placeOrderWhatsApp = () => {
+  // Validate customer fields
+  const name  = document.getElementById('custOrderName').value.trim();
+  const phone = document.getElementById('custOrderPhone').value.trim();
+  const flat  = document.getElementById('custOrderFlat').value.trim();
+  const area  = document.getElementById('custOrderArea').value.trim();
+  const city  = document.getElementById('custOrderCity').value.trim();
+  const pin   = document.getElementById('custOrderPin').value.trim();
+  const note  = document.getElementById('custOrderNote').value.trim();
+
+  if (!name)  { highlightField('custOrderName',  'Please enter your name');   return; }
+  if (!phone) { highlightField('custOrderPhone', 'Please enter phone number'); return; }
+  if (!flat)  { highlightField('custOrderFlat',  'Please enter flat/house no'); return; }
+  if (!area)  { highlightField('custOrderArea',  'Please enter your area');    return; }
+
+  if (!window.cartItems) return;
+  const keys = Object.keys(cart).filter(k => cart[k] > 0);
+  if (!keys.length) return;
+
+  // Build WhatsApp message
+  let lines = [
+    '🎂 *New Order — Shuuvi Bakery*',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '📦 *ORDER ITEMS:*',
+  ];
+  let total = 0;
+  const saleItems = [];
+  keys.forEach(key => {
+    const item = window.cartItems[key]; if (!item) return;
+    const lineTotal = item.price * cart[key];
+    total += lineTotal;
+    lines.push(`  • *${item.name}* (${item.wlabel}) ×${cart[key]} = ₹${lineTotal}`);
+    saleItems.push({ id:item.id, name:item.name, qty:cart[key], price:item.price, weight:item.wlabel });
+  });
+
+  lines.push('');
+  lines.push(`  🛒 Order: ₹${total}`);
+  lines.push(`  🚚 Delivery: ₹30`);
+  lines.push(`  💰 *Total: ₹${total + 30}*`);
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━━━');
+  lines.push('👤 *CUSTOMER DETAILS:*');
+  lines.push(`  Name:    ${name}`);
+  lines.push(`  Phone:   ${phone}`);
+  lines.push('');
+  lines.push('📍 *DELIVERY ADDRESS:*');
+  lines.push(`  ${flat}, ${area}`);
+  lines.push(`  ${city}${pin ? ' - ' + pin : ''}`);
+  if (note) {
+    lines.push('');
+    lines.push(`📝 *NOTE:* ${note}`);
+  }
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━━━');
+  lines.push('_Please confirm order & share payment QR_ 🙏');
+
+  const msg = encodeURIComponent(lines.join('\n'));
+  window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+
+  // Show thank you, hide cards
+  document.getElementById('thankYou').classList.add('show');
+  const sc2 = document.getElementById('orderSummaryCard');
+  const fc2 = document.getElementById('orderFormCard');
+  if(sc2) sc2.style.display='none';
+  if(fc2) fc2.style.display='none';
+
+  // Record sale
+  recordSale(saleItems, total + 30);
+
+  // Reset cart after 2s
+  setTimeout(() => {
+    cart = {}; plateItems = []; window.cartItems = {};
+    renderPlateItems();
+    document.getElementById('reviewBtn').classList.remove('visible');
+    updateBadge();
+    // reset form
+    ['custOrderName','custOrderPhone','custOrderFlat','custOrderArea','custOrderPin','custOrderNote']
+      .forEach(id => { const el=document.getElementById(id); if(el) el.value=el.id==='custOrderCity'?'Mumbai':''; });
+  }, 2000);
+};
+
+function highlightField(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = '#ef4444';
+  el.placeholder = msg;
+  el.focus();
+  el.addEventListener('input', () => el.style.borderColor = '', { once: true });
+}
+
+// Keep checkout for internal use (clear cart)
+window.checkout = () => {
+  cart = {}; plateItems = []; if(window.cartItems) window.cartItems = {};
+  renderPlateItems();
+  document.getElementById('reviewBtn').classList.remove('visible');
+  updateBadge();
+};
+
+// ═══════════════════════════════════════════════════
+//  CUSTOM CAKE REQUEST
+// ═══════════════════════════════════════════════════
+let custImgBase64 = null;
+let custCloudinaryUrl = null;
+
+window.openCustomCake  = () => document.getElementById('customPage').classList.add('open');
+window.closeCustomCake = () => document.getElementById('customPage').classList.remove('open');
+
+window.previewCustImg = (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    custImgBase64 = ev.target.result;
+    const preview = document.getElementById('custImgPreview');
+    const removeBtn = document.getElementById('custRemoveImg');
+    preview.src = custImgBase64;
+    preview.style.display = 'block';
+    removeBtn.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+  // Also try uploading to Cloudinary in background
+  uploadToCloudinaryGeneric(file, 'shuuvi_custom_requests')
+    .then(r => { custCloudinaryUrl = r.url; console.log('Custom img on Cloudinary:', custCloudinaryUrl); })
+    .catch(() => {});
+};
+
+window.removeCustImg = () => {
+  custImgBase64 = null; custCloudinaryUrl = null;
+  document.getElementById('custImgPreview').style.display = 'none';
+  document.getElementById('custRemoveImg').style.display = 'none';
+  document.getElementById('custImgInput').value = '';
+};
+
+window.sendCustomCakeRequest = () => {
+  const name   = document.getElementById('custName').value.trim();
+  const phone  = document.getElementById('custPhone').value.trim();
+  const desc   = document.getElementById('custDesc').value.trim();
+  const budget = document.getElementById('custBudget').value.trim();
+
+  if (!name)  { alert('Please enter your name'); return; }
+  if (!phone) { alert('Please enter your phone number'); return; }
+  if (!desc)  { alert('Please describe your cake idea'); return; }
+
+  let lines = [
+    '🎂 *Custom Cake Request — Shuuvi Bakery*', '',
+    `👤 *Name:* ${name}`,
+    `📞 *Phone:* ${phone}`,
+    `📝 *Cake Idea:*`,
+    desc,
+    '',
+  ];
+  if (budget) lines.push(`💰 *Budget:* ₹${budget}`);
+  if (custCloudinaryUrl) {
+    lines.push('');
+    lines.push(`📸 *Reference Image:* ${custCloudinaryUrl}`);
+  } else if (custImgBase64) {
+    lines.push('');
+    lines.push('📸 _(Reference image attached — please check)_');
+  }
+  lines.push('');
+  lines.push('_Sent from Shuuvi Bakery website_ 💕');
+
+  const msg = encodeURIComponent(lines.join('\n'));
+  window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+
+  // Clear form
+  document.getElementById('custName').value = '';
+  document.getElementById('custPhone').value = '';
+  document.getElementById('custDesc').value = '';
+  document.getElementById('custBudget').value = '';
+  removeCustImg();
+  setTimeout(() => closeCustomCake(), 500);
+};
+
+// ═══════════════════════════════════════════════════
+//  SALES ANALYTICS
+// ═══════════════════════════════════════════════════
+let salesData = [];  // [{date, items:[{name,qty,price}], total}]
+
+function loadSalesData() {
+  try {
+    const s = localStorage.getItem('shuuvi_sales');
+    if (s) salesData = JSON.parse(s);
+  } catch(e) { salesData = []; }
+}
+
+function saveSalesData() {
+  try { localStorage.setItem('shuuvi_sales', JSON.stringify(salesData)); } catch(e) {}
+  // also save to Firestore
+  if (fbReady) {
+    setDoc(doc(db,'shuuvi','sales'), { data: salesData, updatedAt: Date.now() }).catch(()=>{});
+  }
+}
+
+async function loadSalesFromFirebase() {
+  if (!fbReady) { loadSalesData(); return; }
+  try {
+    const snap = await getDoc(doc(db,'shuuvi','sales'));
+    if (snap.exists()) { salesData = snap.data().data || []; }
+    else loadSalesData();
+  } catch(e) { loadSalesData(); }
+}
+
+function recordSale(items, total) {
+  salesData.push({
+    date: new Date().toISOString().split('T')[0],
+    ts: Date.now(),
+    items,
+    total
+  });
+  saveSalesData();
+}
+
+window.clearSalesData = () => {
+  if (!confirm('Clear all sales data?')) return;
+  salesData = [];
+  saveSalesData();
+  renderSalesGraph();
+};
+
+function renderSalesGraph() {
+  // Summary cards
+  const totalRev   = salesData.reduce((a,s)=>a+s.total,0);
+  const totalOrds  = salesData.length;
+  const avg        = totalOrds ? Math.round(totalRev/totalOrds) : 0;
+
+  document.getElementById('totalRevenue').textContent = '₹'+totalRev;
+  document.getElementById('totalOrders').textContent  = totalOrds;
+  document.getElementById('avgOrder').textContent     = '₹'+avg;
+
+  // Best seller
+  const itemCount = {};
+  salesData.forEach(s => s.items.forEach(it => {
+    itemCount[it.name] = (itemCount[it.name]||0) + (it.qty||1);
+  }));
+  const best = Object.entries(itemCount).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('topItem').textContent = best ? best[0].split(' ')[0] : '—';
+
+  // Bar chart — last 7 days
+  const chart = document.getElementById('salesBarChart');
+  chart.innerHTML = '';
+  const days = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  const maxVal = Math.max(...days.map(d => salesData.filter(s=>s.date===d).reduce((a,s)=>a+s.total,0)), 1);
+  const labels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  days.forEach(d => {
+    const dayTotal = salesData.filter(s=>s.date===d).reduce((a,s)=>a+s.total,0);
+    const pct      = Math.round((dayTotal/maxVal)*100);
+    const label    = labels[new Date(d).getDay()];
+    const col      = document.createElement('div');
+    col.className  = 'bar-col';
+    col.innerHTML  = `
+      <div class="bar-inner" data-val="₹${dayTotal}" style="height:${Math.max(pct,3)}%;align-self:flex-end;width:100%;"></div>
+      <div class="bar-label">${label}</div>`;
+    chart.appendChild(col);
+  });
+  document.getElementById('chartDateRange').textContent = days[0].slice(5)+' – '+days[6].slice(5);
+
+  // Top products list
+  const topList = document.getElementById('topProductsList');
+  topList.innerHTML = '';
+  const maxCount = Math.max(...Object.values(itemCount),1);
+  Object.entries(itemCount).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([name,count]) => {
+    const revenue = salesData.flatMap(s=>s.items).filter(it=>it.name===name).reduce((a,it)=>a+(it.price*it.qty||0),0);
+    const pct = Math.round((count/maxCount)*100);
+    const row = document.createElement('div');
+    row.className = 'top-prod-row';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <div class="top-prod-name">🎂 ${name} <span style="font-size:10px;color:#9d174d;font-weight:500;">(×${count})</span></div>
+        <div class="top-prod-bar" style="width:${pct}%"></div>
+      </div>
+      <div class="top-prod-amt">₹${revenue}</div>`;
+    topList.appendChild(row);
+  });
+  if (!Object.keys(itemCount).length) {
+    topList.innerHTML = '<div style="text-align:center;padding:20px;font-size:13px;color:#9d174d;">No sales yet — orders will appear here!</div>';
+  }
+}
+
+// Hook renderSalesGraph into openAdmin
+const _origOpenAdmin = window.openAdmin;
+window.openAdmin = () => {
+  _origOpenAdmin();
+  loadSalesFromFirebase().then(renderSalesGraph);
+};
+
+// Load sales on boot
+loadSalesData();
+
+// ══════════════════════════════════════════════════
+//  SECRET ADMIN ACCESS — tap logo 5 times
+// ══════════════════════════════════════════════════
+// Password stored as SHA-256 hash — plain text never in source
+const ADMIN_HASH = '23acabd4b3c067def76c5b205078840b1f8955502d273d5650bf70a4cd09ac29';
+async function hashInput(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+let tapCount = 0;
+let tapTimer = null;
+
+window.handleLogoTap = () => {
+  tapCount++;
+
+  clearTimeout(tapTimer);
+
+  if (tapCount < 5) {
+    tapTimer = setTimeout(() => { tapCount = 0; }, 3000);
+  } else {
+    tapCount = 0;
+    openPassModal();
+  }
+};
+
+function openPassModal() {
+  const overlay = document.getElementById('adminPassOverlay');
+  const input   = document.getElementById('adminPassInput');
+  const err     = document.getElementById('passError');
+  overlay.classList.add('open');
+  err.style.display = 'none';
+  input.value = '';
+  setTimeout(() => input.focus(), 300);
+}
+window.closePassModal = () => {
+  document.getElementById('adminPassOverlay').classList.remove('open');
+  document.getElementById('adminPassInput').value = '';
+  document.getElementById('passError').style.display = 'none';
+};
+window.verifyAdminPass = async () => {
+  const input = document.getElementById('adminPassInput');
+  const err   = document.getElementById('passError');
+  try {
+    const inputHash = await hashInput(input.value);
+    if (inputHash === ADMIN_HASH) {
+      closePassModal();
+      setTimeout(() => openAdmin(), 200);
+    } else {
+      input.classList.remove('shake');
+      void input.offsetWidth;
+      input.classList.add('shake');
+      err.style.display = 'block';
+      input.value = '';
+      setTimeout(() => input.focus(), 100);
+    }
+  } catch(e) {
+    err.style.display = 'block';
+  }
+};
+
+// ══════════════════════════════════════════════════
+//  WEIGHT OPTIONS — default + Firestore sync
+// ══════════════════════════════════════════════════
+const DEFAULT_WEIGHTS = [
+  { label: '½ Kg',  price: 0    },   // base price from product
+  { label: '1 Kg',  price: 100  },   // +100 over base
+  { label: '1½ Kg', price: 200  },
+  { label: '2 Kg',  price: 350  },
+  { label: '3 Kg',  price: 600  },
+];
+let weightOptions = DEFAULT_WEIGHTS.map(w => ({...w}));
+
+async function loadWeightOptions() {
+  if (fbReady) {
+    try {
+      const snap = await getDoc(doc(db, 'shuuvi', 'weights'));
+      if (snap.exists()) { weightOptions = snap.data().options; return; }
+    } catch(e) {}
+  }
+  try {
+    const s = localStorage.getItem('shuuvi_weights');
+    if (s) weightOptions = JSON.parse(s);
+  } catch(e) {}
+}
+async function saveWeightOptions() {
+  try { localStorage.setItem('shuuvi_weights', JSON.stringify(weightOptions)); } catch(e) {}
+  if (fbReady) {
+    try { await setDoc(doc(db,'shuuvi','weights'), { options: weightOptions }); } catch(e) {}
+  }
+}
+
+// ── Product selected weights (id → weightIndex)
+const selectedWeights = {};  // productId → index into weightOptions
+
+function getProductPrice(p, weightIdx) {
+  const w = weightOptions[weightIdx ?? 0];
+  return p.price + (w ? w.price : 0);
+}
+
+function getWeightLabel(weightIdx) {
+  return weightOptions[weightIdx ?? 0]?.label || '½ Kg';
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER PRODUCTS — with weight selector
+// ══════════════════════════════════════════════════
+const CATEGORY_MAP2 = {all:'🎂 Our Collection',cakes:'🎂 Cakes',cupcakes:'🧁 Cupcakes',brownies:'🍫 Brownies',special:'✨ Specials'};
+
+// Override the existing renderProducts
+renderProducts = function(delay) {
+  const row = document.getElementById('productsRow');
+  row.innerHTML = '';
+  const list = currentFilter === 'all' ? products : products.filter(p => p.cat === currentFilter);
+  list.forEach((p, i) => {
+    const widx  = selectedWeights[p.id] ?? 0;
+    const price = getProductPrice(p, widx);
+    const div   = document.createElement('div');
+    div.className = 'card';
+    const imgHTML = p.img
+      ? `<img src="${p.img}" alt="${p.name}"/>`
+      : `<span class="card-img-emoji">${p.emoji}</span>`;
+
+    // Weight buttons
+    const weightBtns = weightOptions.map((w, wi) =>
+      `<button class="weight-btn ${wi === widx ? 'active' : ''}"
+        onclick="selectWeight(event,${p.id},${wi})">${w.label}</button>`
+    ).join('');
+
+    div.innerHTML = `
+      <div class="card-img-wrap">${imgHTML}</div>
+      <div class="card-name">${p.name}</div>
+      <div class="card-desc">${p.desc}</div>
+      <div class="weight-selector">${weightBtns}</div>
+      <div class="card-price-dynamic" id="cprice-${p.id}">₹${price}</div>
+      <button class="add-btn" id="btn-${p.id}" onclick="addToCart(${p.id})">+</button>`;
+    row.appendChild(div);
+    setTimeout(() => div.classList.add('pop'), (delay || 0) + i * 500);
+  });
+};
+
+window.selectWeight = (e, productId, weightIdx) => {
+  e.stopPropagation();
+  selectedWeights[productId] = weightIdx;
+  // Update active state on buttons
+  const card = document.getElementById('btn-' + productId)?.closest('.card');
+  if (card) {
+    card.querySelectorAll('.weight-btn').forEach((b, i) => b.classList.toggle('active', i === weightIdx));
+  }
+  // Update price display
+  const p = products.find(x => x.id == productId);
+  if (p) {
+    const el = document.getElementById('cprice-' + productId);
+    if (el) el.textContent = '₹' + getProductPrice(p, weightIdx);
+  }
+};
+
+// ══════════════════════════════════════════════════
+//  OVERRIDE addToCart — include weight info
+// ══════════════════════════════════════════════════
+addToCart = (id) => {
+  const p = products.find(x => x.id == id);
+  if (!p) return;
+  const widx  = selectedWeights[id] ?? 0;
+  const price = getProductPrice(p, widx);
+  const wlabel = getWeightLabel(widx);
+
+  // cart key = id_weightIdx so same cake diff weight = separate line
+  const cartKey = `${id}_${widx}`;
+  cart[cartKey] = (cart[cartKey] || 0) + 1;
+
+  // store full info in cartItems for rendering
+  if (!window.cartItems) window.cartItems = {};
+  window.cartItems[cartKey] = { id, widx, price, wlabel, name: p.name, emoji: p.emoji, img: p.img };
+
+  const btn = document.getElementById('btn-' + id);
+  if (btn) { btn.classList.add('added'); setTimeout(() => btn.classList.remove('added'), 400); }
+
+  plateItems.push({ id: p.id, img: p.img, emoji: p.emoji });
+  bounceTray(); renderPlateItems(); updateBadge(); showReviewBtn();
+};
+
+// ══════════════════════════════════════════════════
+//  OVERRIDE renderOrderPage — show weight & price
+// ══════════════════════════════════════════════════
+renderOrderPage = function() {
+  if (!window.cartItems) window.cartItems = {};
+  const keys = Object.keys(cart).filter(k => cart[k] > 0);
+  const mini = document.getElementById('orderPlateMini');
+  mini.innerHTML = '';
+  keys.forEach(key => {
+    const item = window.cartItems[key]; if (!item) return;
+    const p = products.find(x => x.id == item.id); if (!p) return;
+    if (p.img) {
+      const i = document.createElement('img');
+      i.src = p.img; i.style.cssText = 'width:28px;height:28px;border-radius:6px;object-fit:cover;';
+      mini.appendChild(i);
+    } else {
+      const s = document.createElement('span');
+      s.textContent = p.emoji; s.style.fontSize = '22px';
+      mini.appendChild(s);
+    }
+  });
+  const container = document.getElementById('orderItems');
+  container.innerHTML = '';
+  let subtotal = 0;
+  keys.forEach(key => {
+    const item = window.cartItems[key]; if (!item) return;
+    const p = products.find(x => x.id == item.id); if (!p) return;
+    const lineTotal = item.price * cart[key];
+    subtotal += lineTotal;
+    const row = document.createElement('div');
+    row.className = 'order-item';
+    const thumb = p.img
+      ? `<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;"/>`
+      : `<span>${p.emoji}</span>`;
+    row.innerHTML = `
+      <div class="order-item-left">
+        <div class="order-item-thumb">${thumb}</div>
+        <div>
+          <div class="order-item-name">${p.name} <span style="font-size:10px;background:#fce7f3;color:#be185d;padding:2px 6px;border-radius:999px;font-weight:600;">${item.wlabel}</span></div>
+          <div class="order-item-price">₹${item.price} each</div>
+        </div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty('${key}',-1)">−</button>
+        <span class="qty-num">${cart[key]}</span>
+        <button class="qty-btn" onclick="changeQty('${key}',1)">+</button>
+      </div>`;
+    container.appendChild(row);
+  });
+  document.getElementById('orderSubtotal').textContent = '₹' + subtotal;
+  document.getElementById('orderTotal').textContent    = '₹' + (subtotal + 30);
+};
+
+// ══════════════════════════════════════════════════
+//  OVERRIDE changeQty — use string key
+// ══════════════════════════════════════════════════
+changeQty = (key, delta) => {
+  cart[key] = (cart[key] || 0) + delta;
+  const item = window.cartItems?.[key];
+  if (delta === -1 && item) {
+    const idx = plateItems.map(x => x.id).lastIndexOf(Number(item.id));
+    if (idx > -1) { plateItems.splice(idx, 1); renderPlateItems(); }
+  } else if (delta === 1 && item) {
+    const p = products.find(x => x.id == item.id);
+    if (p) { plateItems.push({ id: p.id, img: p.img, emoji: p.emoji }); renderPlateItems(); }
+  }
+  if (cart[key] <= 0) { delete cart[key]; if (window.cartItems) delete window.cartItems[key]; }
+  updateBadge();
+  if (!Object.keys(cart).filter(k => cart[k] > 0).length) {
+    plateItems = []; renderPlateItems();
+    document.getElementById('reviewBtn').classList.remove('visible');
+    closeOrder(); return;
+  }
+  renderOrderPage();
+};
+
+// ══════════════════════════════════════════════════
+//  OVERRIDE sendWhatsAppOrder — include weights
+// ══════════════════════════════════════════════════
+// placeOrderWhatsApp handles all WhatsApp ordering with customer details
+
+// ══════════════════════════════════════════════════
+//  ADMIN — Weight pricing panel
+// ══════════════════════════════════════════════════
+function renderWeightPricingGrid() {
+  const grid = document.getElementById('weightPricingGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  weightOptions.forEach((w, i) => {
+    const row = document.createElement('div');
+    row.className = 'weight-price-row';
+    row.innerHTML = `
+      <span class="weight-price-label">${w.label}</span>
+      <span class="weight-price-unit">Base +</span>
+      <input class="weight-price-input" type="number" value="${w.price}" 
+             onchange="updateWeightPrice(${i}, this.value)" placeholder="0"/>
+      <span class="weight-price-unit">₹</span>
+      <button onclick="removeWeightOption(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;">✕</button>`;
+    grid.appendChild(row);
+  });
+}
+
+window.updateWeightPrice = (idx, val) => {
+  weightOptions[idx].price = parseInt(val) || 0;
+};
+window.removeWeightOption = (idx) => {
+  if (weightOptions.length <= 1) { alert('Need at least 1 weight option'); return; }
+  weightOptions.splice(idx, 1);
+  renderWeightPricingGrid();
+};
+window.addWeightOption = () => {
+  const label = document.getElementById('newWeightLabel').value.trim();
+  const price = parseInt(document.getElementById('newWeightPrice').value) || 0;
+  if (!label) { alert('Enter a weight label'); return; }
+  weightOptions.push({ label, price });
+  document.getElementById('newWeightLabel').value = '';
+  document.getElementById('newWeightPrice').value = '';
+  renderWeightPricingGrid();
+};
+
+// Hook into openAdmin to render weight grid
+const __origOpenAdmin = window.openAdmin;
+window.openAdmin = () => {
+  __origOpenAdmin();
+  renderWeightPricingGrid();
+  loadSalesFromFirebase().then(renderSalesGraph);
+};
+
+// Hook into saveAdmin to also save weights
+const __origSaveAdmin = window.saveAdmin;
+window.saveAdmin = async () => {
+  await __origSaveAdmin();
+  await saveWeightOptions();
+  renderProducts(0);
+};
+
+// Load weights on boot
+loadWeightOptions().then(() => renderProducts(0));
+
+
+
+// ════════════════════════════════════════════════════
+//  CAKE ASSEMBLY LOADING ANIMATION
+//  Smooth, clean, properly timed
+// ════════════════════════════════════════════════════
+function runCakeLoadingAnimation() {
+  let started = false;
+  if (started) return;
+  started = true;
+
+  // Parts fly in one by one — nice slow pace
+  // [id, animation, delayMs, durationSec]
+  const parts = [
+    { id:'cakePlate',    anim:'flyFromBottom',      delay:100,  dur:1.0 },
+    { id:'cakeLayer1',   anim:'flyFromBottomLeft',  delay:700,  dur:1.0 },
+    { id:'cakeLayer2',   anim:'flyFromLeft',        delay:1400, dur:1.0 },
+    { id:'cakeLayer3',   anim:'flyFromRight',       delay:2100, dur:1.0 },
+    { id:'cakeCandle',   anim:'flyFromTop',         delay:2800, dur:0.9 },
+    { id:'cakeFlame',    anim:'flyFromTopRight',    delay:3500, dur:0.8 },
+    { id:'cakeDots',     anim:'flyFromBottomRight', delay:3800, dur:0.9 },
+    { id:'cakeSparkles', anim:'flyFromTopLeft',     delay:4100, dur:0.9 },
+  ];
+
+  parts.forEach(p => {
+    const el = document.getElementById(p.id);
+    if (!el) return;
+    setTimeout(() => {
+      el.style.animation = `${p.anim} ${p.dur}s cubic-bezier(0.25,0.8,0.25,1) forwards`;
+    }, p.delay);
+  });
+
+  // Flame flicker — after flame lands
+  setTimeout(() => {
+    const flame = document.getElementById('flameShape');
+    if (flame) flame.style.animation = 'candleFlicker 0.7s ease-in-out infinite';
+  }, 4500);
+
+  // Cake sways — slow gentle wiper
+  setTimeout(() => {
+    const svg = document.getElementById('cakeSvg');
+    if (svg) {
+      svg.style.transformOrigin = 'center bottom';
+      svg.style.animation = 'cakeSway 2s ease-in-out 2';
+    }
+  }, 5000);
+
+  // Brand name fades in gently
+  setTimeout(() => {
+    const brand = document.getElementById('loadingBrandWrap');
+    if (brand) brand.classList.add('show');
+  }, 5400);
+
+  // Fade out — give enough time to enjoy
+  setTimeout(() => {
+    document.getElementById('loadingOverlay')?.classList.add('hide');
+  }, 8000);
+}
+
+// ── UTILS ──
+function fileToBase64(file){return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(file);});}
+</script>
+
+<!-- CUSTOM CAKE FAB -->
+<button class="custom-cake-fab" onclick="openCustomCake()">
+  🎂 Custom Cake?
+</button>
+
+<!-- CUSTOM CAKE PAGE -->
+<div class="custom-page" id="customPage">
+  <div class="custom-header">
+    <button class="back-btn" onclick="closeCustomCake()">←</button>
+    <h2>🎂 Custom Cake Request</h2>
+  </div>
+  <div class="custom-body">
+    <div class="custom-hero">
+      <div class="icon">👩‍🍳</div>
+      <h3>Design Your Dream Cake!</h3>
+      <p>Share your idea and we'll bring it to life with love ❤️</p>
+    </div>
+    <div class="custom-form">
+      <div>
+        <label class="custom-label">Your Name *</label>
+        <input class="custom-input" id="custName" placeholder="e.g. Priya Sharma" type="text"/>
+      </div>
+      <div>
+        <label class="custom-label">Phone Number *</label>
+        <input class="custom-input" id="custPhone" placeholder="e.g. 9876543210" type="tel"/>
+      </div>
+      <div>
+        <label class="custom-label">Cake Description *</label>
+        <textarea class="custom-input custom-textarea" id="custDesc" placeholder="Tell us your idea — theme, flavour, size, occasion, number of tiers, special message on cake..."></textarea>
+      </div>
+      <div>
+        <label class="custom-label">Budget (approx) ₹</label>
+        <input class="custom-input" id="custBudget" placeholder="e.g. 800" type="number"/>
+      </div>
+      <div>
+        <label class="custom-label">Reference / Inspiration Photo (optional)</label>
+        <div class="custom-img-upload" onclick="document.getElementById('custImgInput').click()">
+          <div class="uicon">📸</div>
+          <p>Tap to upload a reference image</p>
+        </div>
+        <input type="file" id="custImgInput" accept="image/*" onchange="previewCustImg(event)"/>
+        <div class="custom-preview-wrap">
+          <img id="custImgPreview" class="custom-preview-img" src="" alt=""/>
+          <button id="custRemoveImg" class="custom-remove-img" onclick="removeCustImg()">✕</button>
+        </div>
+      </div>
+      <button class="custom-send-btn" onclick="sendCustomCakeRequest()">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Send Request on WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ADMIN PASSWORD MODAL -->
+<div class="admin-pass-overlay" id="adminPassOverlay">
+  <div class="admin-pass-box">
+    <div class="lock-icon">🔐</div>
+    <h3>Admin Access</h3>
+    <p>Enter the secret password to continue</p>
+    <input class="admin-pass-input" id="adminPassInput" type="password" 
+           placeholder="••••••••" maxlength="20"
+           onkeydown="if(event.key==='Enter')verifyAdminPass()"/>
+    <div class="pass-error" id="passError">❌ Wrong password. Try again!</div>
+    <button class="admin-pass-btn" onclick="verifyAdminPass()">Unlock →</button>
+    <button class="admin-pass-cancel" onclick="closePassModal()">Cancel</button>
+  </div>
+</div>
+
+</body>
+</html>
